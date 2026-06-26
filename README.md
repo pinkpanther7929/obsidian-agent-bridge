@@ -1,5 +1,7 @@
 # obsidian-agent-bridge
 
+English | [한국어](README.ko.md)
+
 Local-first Obsidian memory tools for coding agents.
 
 `obsidian-agent-bridge` helps an agent treat an Obsidian vault as a small,
