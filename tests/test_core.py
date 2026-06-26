@@ -4,9 +4,9 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from obsidian_agent_bridge.recorder import record
-from obsidian_agent_bridge.router import route
-from obsidian_agent_bridge.vault import Vault
+from recorder import record
+from router import route
+from vault import Vault
 
 
 class CoreTests(unittest.TestCase):

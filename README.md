@@ -17,9 +17,9 @@ wrap the same CLI later.
 ## Quick Start
 
 ```powershell
-python -m obsidian_agent_bridge route --cwd C:\work\app --path src\auth\session.py
-python -m obsidian_agent_bridge record --category engineering/backend --title "auth session fix" --summary "Fixed stale session cleanup."
-python -m obsidian_agent_bridge check
+python obs_agent.py route --cwd C:\work\app --path src\auth\session.py
+python obs_agent.py record --category engineering/backend --title "auth session fix" --summary "Fixed stale session cleanup."
+python obs_agent.py check
 ```
 
 Default vault:
@@ -37,7 +37,7 @@ Override with `--vault` or `OBSIDIAN_VAULT_PATH`.
 Suggests a category and minimal read set from cwd, paths, and request text.
 
 ```powershell
-python -m obsidian_agent_bridge route `
+python obs_agent.py route `
   --cwd C:\work\app `
   --path src\auth\session.py `
   --request "Fix stale login sessions" `
@@ -49,7 +49,7 @@ python -m obsidian_agent_bridge route `
 Writes a category history note and appends one deduplicated daily backlink.
 
 ```powershell
-python -m obsidian_agent_bridge record `
+python obs_agent.py record `
   --category engineering/backend `
   --title "auth session fix" `
   --summary "Fixed stale session cleanup." `
@@ -65,7 +65,7 @@ Scans non-archive Markdown for:
 - secret-looking content
 
 ```powershell
-python -m obsidian_agent_bridge check --json
+python obs_agent.py check --json
 ```
 
 ## Agent Shape

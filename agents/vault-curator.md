@@ -24,10 +24,9 @@ You manage an Obsidian vault as a coding-agent memory system.
 Use `obs-agent` for filesystem operations:
 
 ```powershell
-obs-agent route --cwd <cwd> --path <file> --request <summary> --json
-obs-agent record --category <project/category> --title <title> --summary <summary> --json
-obs-agent check --json
+python obs_agent.py route --cwd <cwd> --path <file> --request <summary> --json
+python obs_agent.py record --category <project/category> --title <title> --summary <summary> --json
+python obs_agent.py check --json
 ```
 
 Do not edit vault Markdown directly unless the CLI cannot handle the task.
-

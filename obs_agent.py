@@ -5,10 +5,10 @@ import json
 import sys
 from dataclasses import asdict
 
-from .checker import check
-from .recorder import record
-from .router import route
-from .vault import Vault, VaultError
+from checker import check
+from recorder import record
+from router import route
+from vault import Vault, VaultError
 
 if sys.platform == "win32":
     sys.stdout.reconfigure(encoding="utf-8")
@@ -90,3 +90,6 @@ def main(argv: list[str] | None = None) -> int:
         print(f"error: {exc}", file=sys.stderr)
         return 2
 
+
+if __name__ == "__main__":
+    raise SystemExit(main())

@@ -4,7 +4,7 @@ import re
 from pathlib import Path
 from typing import Any
 
-from .vault import SECRET_RE, Vault
+from vault import SECRET_RE, Vault
 
 WIKI_LINK_RE = re.compile(r"\[\[([^\]|#]+)(?:#[^\]|]+)?(?:\|[^\]]+)?\]\]")
 
