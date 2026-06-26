@@ -41,7 +41,7 @@ class AppConfig:
         config_path = Path(path).expanduser() if path else default_config_path()
         if not config_path.exists():
             return cls()
-        data = json.loads(config_path.read_text(encoding="utf-8"))
+        data = json.loads(config_path.read_text(encoding="utf-8-sig"))
         if not isinstance(data, dict):
             raise ValueError("config root must be an object")
         language = _language(data.get("language"))

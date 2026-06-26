@@ -7,9 +7,11 @@ from pathlib import Path
 
 from cli.config import AppConfig
 from cli.checker import check
+from cli.reader import read_note, search_notes
 from cli.recorder import record
 from cli.router import build_category_hints, route
 from cli.vault import Vault
+from mcp_server.server import handle
 
 
 class CoreTests(unittest.TestCase):
@@ -126,6 +128,40 @@ class CoreTests(unittest.TestCase):
         (vault.root / "CODEX.md").write_text("[[shared]]\n", encoding="utf-8")
         result = check(vault)
         self.assertEqual(result["errors"][0]["kind"], "ambiguous_link")
+
+    def test_read_and_search_notes(self) -> None:
+        vault = self.make_vault()
+        path = vault.root / "projects" / "ai" / "agents" / "index.md"
+        path.write_text("# Agents\n\nMemory routing\n", encoding="utf-8")
+        read = read_note(vault, path="projects/ai/agents/index.md", start=2, lines=2)
+        hits = search_notes(vault, query="memory", path_prefix="projects/ai", limit=5)
+        self.assertEqual(read.content, "\nMemory routing")
+        self.assertEqual(hits[0].path, "projects/ai/agents/index.md")
+
+    def test_mcp_lists_and_calls_route_tool(self) -> None:
+        listed = handle({"jsonrpc": "2.0", "id": 1, "method": "tools/list"})
+        self.assertIsNotNone(listed)
+        self.assertIn("obs_route", {tool["name"] for tool in listed["result"]["tools"]})
+
+        vault = self.make_vault()
+        called = handle(
+            {
+                "jsonrpc": "2.0",
+                "id": 2,
+                "method": "tools/call",
+                "params": {
+                    "name": "obs_route",
+                    "arguments": {
+                        "vault": str(vault.root),
+                        "config": str(vault.root / "missing-config.json"),
+                        "request": "MCP agent memory",
+                    },
+                },
+            }
+        )
+        self.assertIsNotNone(called)
+        content = called["result"]["content"][0]["text"]
+        self.assertIn("projects/ai/agents", content)
 
 
 if __name__ == "__main__":

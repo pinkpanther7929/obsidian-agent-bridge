@@ -8,12 +8,14 @@ from dataclasses import asdict
 if __package__ in {None, ""}:
     from checker import check
     from config import AppConfig
+    from reader import read_note, search_notes
     from recorder import record
     from router import route
     from vault import Vault, VaultError
 else:
     from .checker import check
     from .config import AppConfig
+    from .reader import read_note, search_notes
     from .recorder import record
     from .router import route
     from .vault import Vault, VaultError
@@ -75,6 +77,29 @@ def cmd_check(args: argparse.Namespace) -> int:
     return 1 if result["error_count"] else 0
 
 
+def cmd_read(args: argparse.Namespace) -> int:
+    config = AppConfig.load(args.config)
+    vault = Vault.open(args.vault or config.vault)
+    result = read_note(vault, path=args.path, start=args.start, lines=args.lines)
+    emit(asdict(result), args.json)
+    return 0
+
+
+def cmd_search(args: argparse.Namespace) -> int:
+    config = AppConfig.load(args.config)
+    vault = Vault.open(args.vault or config.vault)
+    hits = search_notes(
+        vault,
+        query=args.query,
+        path_prefix=args.path_prefix,
+        limit=args.limit,
+        regex=args.regex,
+        case_sensitive=args.case_sensitive,
+    )
+    emit({"query": args.query, "count": len(hits), "results": [asdict(hit) for hit in hits]}, args.json)
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Obsidian memory bridge for coding agents.")
     parser.add_argument("--vault", help="Vault root. Defaults to OBSIDIAN_VAULT_PATH or the built-in user vault.")
@@ -100,6 +125,22 @@ def build_parser() -> argparse.ArgumentParser:
     check_cmd = sub.add_parser("check", help="Check links, daily duplicates, and secret-looking content.")
     check_cmd.add_argument("--json", action="store_true")
     check_cmd.set_defaults(func=cmd_check)
+
+    read_cmd = sub.add_parser("read", help="Read one note by vault-relative path.")
+    read_cmd.add_argument("--path", required=True)
+    read_cmd.add_argument("--start", type=int, default=1)
+    read_cmd.add_argument("--lines", type=int)
+    read_cmd.add_argument("--json", action="store_true")
+    read_cmd.set_defaults(func=cmd_read)
+
+    search_cmd = sub.add_parser("search", help="Search non-archive Markdown notes.")
+    search_cmd.add_argument("--query", required=True)
+    search_cmd.add_argument("--path-prefix")
+    search_cmd.add_argument("--limit", type=int, default=50)
+    search_cmd.add_argument("--regex", action="store_true")
+    search_cmd.add_argument("--case-sensitive", action="store_true")
+    search_cmd.add_argument("--json", action="store_true")
+    search_cmd.set_defaults(func=cmd_search)
     return parser
 
 

@@ -39,6 +39,14 @@ Check vault health:
 python cli/obs_agent.py check --json
 ```
 
+When MCP is configured, prefer these tools:
+
+- `obs_route`
+- `obs_read`
+- `obs_search`
+- `obs_record`
+- `obs_check`
+
 Use `--config <path>` for custom vault paths, daily folders, route hints, and
 history templates.
 

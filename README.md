@@ -19,7 +19,7 @@ checks the vault for memory hygiene issues.
   note template.
 
 The current interface is a CLI. Agent specs, skills, and future MCP tools wrap
-the same behavior.
+the same behavior. A dependency-free stdio MCP server is included.
 
 ## Repository Layout
 
@@ -34,6 +34,11 @@ obsidian-agent-bridge/
     vault.py          # safe vault filesystem access
   agents/
     vault-curator.md
+  mcp_server/
+    server.py
+  examples/
+    claude_desktop_config.json
+    codex_config.toml
   skills/
     obsidian-memory/SKILL.md
   tests/
@@ -44,6 +49,8 @@ obsidian-agent-bridge/
 
 ```powershell
 python cli\obs_agent.py route --cwd C:\work\app --path src\auth\session.py --request "Fix stale login sessions" --json
+python cli\obs_agent.py read --path CODEX.md --json
+python cli\obs_agent.py search --query "session" --path-prefix projects --json
 python cli\obs_agent.py record --category engineering/backend --title "auth session fix" --summary "Fixed stale session cleanup." --dry-run --json
 python cli\obs_agent.py check --json
 ```
@@ -56,6 +63,12 @@ Default vault:
 
 Override with `--vault`, `OBSIDIAN_VAULT_PATH`, `--config`, or
 `OBS_AGENT_CONFIG`.
+
+Write a local config:
+
+```powershell
+.\scripts\write-config.ps1 -Vault "$env:USERPROFILE\Documents\Obsidian Vault" -Language en
+```
 
 ## Config
 
@@ -134,6 +147,26 @@ python cli\obs_agent.py record `
 
 `--dry-run` previews `note_path`, `daily_link`, and `note_text` without writing.
 
+### `read`
+
+Read one vault-relative note.
+
+```powershell
+python cli\obs_agent.py read --path CODEX.md --json
+```
+
+### `search`
+
+Search non-archive Markdown notes.
+
+```powershell
+python cli\obs_agent.py search `
+  --query "session" `
+  --path-prefix projects `
+  --limit 20 `
+  --json
+```
+
 ### `check`
 
 Scan non-archive Markdown for vault hygiene issues.
@@ -166,6 +199,68 @@ Bundled agent/skill docs:
 
 - [`agents/vault-curator.md`](agents/vault-curator.md)
 - [`skills/obsidian-memory/SKILL.md`](skills/obsidian-memory/SKILL.md)
+
+## MCP Server
+
+Run the stdio MCP server:
+
+```powershell
+python -m mcp_server.server
+```
+
+On Windows, this repo also includes a cwd-safe wrapper:
+
+```powershell
+powershell.exe -NoProfile -File D:\obsidian-agent-bridge\scripts\run-mcp.ps1
+```
+
+If installed as a package, use:
+
+```powershell
+obs-agent-mcp
+```
+
+MCP tools:
+
+- `obs_route`
+- `obs_read`
+- `obs_search`
+- `obs_record`
+- `obs_check`
+
+Claude Desktop example:
+
+```json
+{
+  "mcpServers": {
+    "obsidian-agent-bridge": {
+      "command": "python",
+      "args": ["-m", "mcp_server.server"],
+      "cwd": "D:\\obsidian-agent-bridge"
+    }
+  }
+}
+```
+
+Codex config example:
+
+```toml
+[mcp_servers.obsidian-agent-bridge]
+command = "python"
+args = ["-m", "mcp_server.server"]
+cwd = "D:\\obsidian-agent-bridge"
+```
+
+Claude Code command:
+
+```powershell
+claude mcp add -s user obsidian-agent-bridge -- powershell.exe -NoProfile -File D:\obsidian-agent-bridge\scripts\run-mcp.ps1
+```
+
+See [`examples/`](examples/) for copyable config snippets.
+
+For Claude or Codex project instructions, copy the relevant parts from
+[`examples/AGENTS.md`](examples/AGENTS.md).
 
 ## Development
 

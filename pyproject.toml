@@ -15,6 +15,7 @@ dependencies = []
 
 [project.scripts]
 obs-agent = "cli.obs_agent:main"
+obs-agent-mcp = "mcp_server.server:main"
 
 [tool.hatch.build.targets.wheel]
-packages = ["cli"]
+packages = ["cli", "mcp_server"]

@@ -1,0 +1,10 @@
+{
+  "vault": "~/Documents/Obsidian Vault",
+  "language": "en",
+  "dailyFolder": "daily",
+  "historyTemplate": "# {date} {title}\n\n{summary}\n",
+  "categoryHints": {
+    "projects/engineering/backend": ["backend", "api", "auth", "database"],
+    "projects/ai/agents": ["agent", "mcp", "tool", "memory"]
+  }
+}

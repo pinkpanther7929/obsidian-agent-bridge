@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "obsidian-agent-bridge": {
+      "command": "python",
+      "args": [
+        "-m",
+        "mcp_server.server"
+      ],
+      "cwd": "D:\\obsidian-agent-bridge"
+    }
+  }
+}
