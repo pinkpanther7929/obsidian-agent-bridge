@@ -7,6 +7,7 @@ from typing import Any, Callable
 
 from cli.checker import check
 from cli.config import AppConfig
+from cli.oab import set_auto_record, set_option, status
 from cli.reader import read_note, search_notes
 from cli.recorder import record
 from cli.router import route
@@ -92,6 +93,25 @@ def tool_check(args: dict[str, Any]) -> dict[str, Any]:
     return _text(check(vault))
 
 
+def tool_oab(args: dict[str, Any]) -> dict[str, Any]:
+    action = args.get("action") or "status"
+    config_path = args.get("config")
+    if action == "status":
+        result = status(config_path)
+    elif action == "on":
+        result = set_auto_record(True, config_path)
+    elif action == "off":
+        result = set_auto_record(False, config_path)
+    elif action == "set":
+        value = args.get("value")
+        if not isinstance(value, bool):
+            raise ValueError("Missing required boolean argument: value")
+        result = set_option(_required(args, "key"), value, config_path)
+    else:
+        raise ValueError(f"Unknown OAB action: {action}")
+    return _text(result)
+
+
 def _required(args: dict[str, Any], key: str) -> str:
     value = args.get(key)
     if not isinstance(value, str) or not value:
@@ -105,6 +125,7 @@ TOOLS: dict[str, Callable[[dict[str, Any]], dict[str, Any]]] = {
     "obs_search": tool_search,
     "obs_record": tool_record,
     "obs_check": tool_check,
+    "obs_oab": tool_oab,
 }
 
 
@@ -180,6 +201,19 @@ TOOL_DEFINITIONS = [
             "properties": {
                 "config": {"type": "string"},
                 "vault": {"type": "string"},
+            },
+        },
+    },
+    {
+        "name": "obs_oab",
+        "description": "Show or change OAB automatic Obsidian memory settings.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "action": {"type": "string", "enum": ["status", "on", "off", "set"]},
+                "key": {"type": "string", "enum": ["autoRecord", "memoryRecorderAgent", "includePrompt"]},
+                "value": {"type": "boolean"},
+                "config": {"type": "string"},
             },
         },
     },

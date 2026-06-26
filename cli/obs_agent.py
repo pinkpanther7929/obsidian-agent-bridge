@@ -8,6 +8,7 @@ from dataclasses import asdict
 if __package__ in {None, ""}:
     from checker import check
     from config import AppConfig
+    from oab import set_auto_record, set_option, status
     from reader import read_note, search_notes
     from recorder import record
     from router import route
@@ -15,6 +16,7 @@ if __package__ in {None, ""}:
 else:
     from .checker import check
     from .config import AppConfig
+    from .oab import set_auto_record, set_option, status
     from .reader import read_note, search_notes
     from .recorder import record
     from .router import route
@@ -100,6 +102,30 @@ def cmd_search(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_oab(args: argparse.Namespace) -> int:
+    if args.action == "status":
+        result = status(args.config)
+    elif args.action == "on":
+        result = set_auto_record(True, args.config)
+    elif args.action == "off":
+        result = set_auto_record(False, args.config)
+    elif args.action == "set":
+        result = set_option(args.key, args.value, args.config)
+    else:
+        raise ValueError(f"unknown OAB action: {args.action}")
+    emit(result, args.json)
+    return 0
+
+
+def parse_bool(value: str) -> bool:
+    lowered = value.casefold()
+    if lowered in {"1", "true", "yes", "y", "on", "enable", "enabled"}:
+        return True
+    if lowered in {"0", "false", "no", "n", "off", "disable", "disabled"}:
+        return False
+    raise argparse.ArgumentTypeError(f"invalid boolean: {value}")
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Obsidian memory bridge for coding agents.")
     parser.add_argument("--vault", help="Vault root. Defaults to OBSIDIAN_VAULT_PATH or the built-in user vault.")
@@ -141,6 +167,27 @@ def build_parser() -> argparse.ArgumentParser:
     search_cmd.add_argument("--case-sensitive", action="store_true")
     search_cmd.add_argument("--json", action="store_true")
     search_cmd.set_defaults(func=cmd_search)
+
+    oab_cmd = sub.add_parser("oab", help="Control automatic Obsidian memory behavior.")
+    oab_sub = oab_cmd.add_subparsers(dest="action", required=True)
+
+    oab_status = oab_sub.add_parser("status", help="Show OAB auto-memory state.")
+    oab_status.add_argument("--json", action="store_true")
+    oab_status.set_defaults(func=cmd_oab)
+
+    oab_on = oab_sub.add_parser("on", help="Enable OAB auto-memory.")
+    oab_on.add_argument("--json", action="store_true")
+    oab_on.set_defaults(func=cmd_oab)
+
+    oab_off = oab_sub.add_parser("off", help="Disable OAB auto-memory.")
+    oab_off.add_argument("--json", action="store_true")
+    oab_off.set_defaults(func=cmd_oab)
+
+    oab_set = oab_sub.add_parser("set", help="Set one OAB boolean option.")
+    oab_set.add_argument("key", choices=["autoRecord", "memoryRecorderAgent", "includePrompt"])
+    oab_set.add_argument("value", type=parse_bool)
+    oab_set.add_argument("--json", action="store_true")
+    oab_set.set_defaults(func=cmd_oab)
     return parser
 
 

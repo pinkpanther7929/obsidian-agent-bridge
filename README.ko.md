@@ -69,6 +69,7 @@ obs-agent-mcp
 - `archive/`를 기본 제외하고 Vault 노트를 읽고 검색합니다.
 - 누락/모호한 노트 링크, 중복 daily backlink, secret처럼 보이는 내용을 점검합니다.
 - config로 영어/한국어 메시지를 지원합니다.
+- OAB 자동 메모리 상태를 CLI/MCP에서 확인하고 켜거나 끌 수 있습니다.
 
 ## 저장소 구조
 
@@ -101,6 +102,9 @@ obsidian-agent-bridge/
   "language": "ko",
   "dailyFolder": "daily",
   "historyTemplate": "# {date} {title}\n\n{summary}\n",
+  "autoRecord": true,
+  "memoryRecorderAgent": true,
+  "includePrompt": true,
   "categoryHints": {
     "projects/engineering/backend": ["backend", "api", "auth", "database"],
     "projects/ai/agents": ["agent", "mcp", "tool", "memory"]
@@ -118,6 +122,9 @@ obs-agent read --path CODEX.md --json
 obs-agent search --query "session" --path-prefix projects --json
 obs-agent record --category engineering/backend --title "auth session fix" --summary "Fixed stale session cleanup." --dry-run --json
 obs-agent check --json
+obs-agent oab status --json
+obs-agent oab off --json
+obs-agent oab on --json
 ```
 
 npm 설치 없이 쓸 때:
@@ -143,6 +150,7 @@ obs-agent-mcp
 - `obs_search`
 - `obs_record`
 - `obs_check`
+- `obs_oab`
 
 권장 에이전트 흐름:
 
@@ -152,6 +160,8 @@ obs-agent-mcp
 4. `obs_record`에 `dry_run: true`로 미리보기
 5. 최종 작업을 `obs_record`로 기록
 6. 필요하면 `obs_check` 실행
+
+`/oab status`, `/oab on`, `/oab off`, `/oab set ...` 요청은 `obs_oab` 또는 `obs-agent oab`로 처리하면 됩니다.
 
 Claude/Codex 설정 예시는 [`examples/`](examples/)에 있고, 프로젝트 지시문 예시는 [`examples/AGENTS.md`](examples/AGENTS.md)에 있습니다.
 

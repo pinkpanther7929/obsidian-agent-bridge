@@ -69,6 +69,7 @@ obs-agent-mcp
 - Reads/searches vault notes safely, excluding `archive/` by default.
 - Checks missing/ambiguous note links, duplicate daily backlinks, and secret-looking content.
 - Supports English and Korean messages through config.
+- Lets agents inspect and toggle OAB auto-memory through CLI/MCP.
 
 ## Repository Layout
 
@@ -101,6 +102,9 @@ Example:
   "language": "en",
   "dailyFolder": "daily",
   "historyTemplate": "# {date} {title}\n\n{summary}\n",
+  "autoRecord": true,
+  "memoryRecorderAgent": true,
+  "includePrompt": true,
   "categoryHints": {
     "projects/engineering/backend": ["backend", "api", "auth", "database"],
     "projects/ai/agents": ["agent", "mcp", "tool", "memory"]
@@ -118,6 +122,9 @@ obs-agent read --path CODEX.md --json
 obs-agent search --query "session" --path-prefix projects --json
 obs-agent record --category engineering/backend --title "auth session fix" --summary "Fixed stale session cleanup." --dry-run --json
 obs-agent check --json
+obs-agent oab status --json
+obs-agent oab off --json
+obs-agent oab on --json
 ```
 
 Without npm install, use:
@@ -143,6 +150,7 @@ Tools:
 - `obs_search`
 - `obs_record`
 - `obs_check`
+- `obs_oab`
 
 Recommended agent flow:
 
@@ -152,6 +160,8 @@ Recommended agent flow:
 4. Preview with `obs_record` and `dry_run: true`.
 5. Record final work with `obs_record`.
 6. Optionally run `obs_check`.
+
+Map `/oab status`, `/oab on`, `/oab off`, and `/oab set ...` requests to `obs_oab` or `obs-agent oab`.
 
 See [`examples/`](examples/) for Claude/Codex config snippets and [`examples/AGENTS.md`](examples/AGENTS.md) for project instructions.
 

@@ -35,6 +35,9 @@ class AppConfig:
     daily_folder: str = "daily"
     history_template: str = "# {date} {title}\n\n{summary}\n"
     category_hints: dict[str, list[str]] = field(default_factory=lambda: dict(DEFAULT_CATEGORY_HINTS))
+    auto_record: bool = True
+    memory_recorder_agent: bool = True
+    include_prompt: bool = True
 
     @classmethod
     def load(cls, path: str | None = None) -> "AppConfig":
@@ -55,6 +58,9 @@ class AppConfig:
                 default=DEFAULT_HISTORY_TEMPLATES[language],
             ),
             category_hints=_category_hints(data.get("categoryHints")),
+            auto_record=_bool_value(data.get("autoRecord"), default=True),
+            memory_recorder_agent=_bool_value(data.get("memoryRecorderAgent"), default=True),
+            include_prompt=_bool_value(data.get("includePrompt"), default=True),
         )
 
 
@@ -85,6 +91,14 @@ def _language(value: Any) -> str:
     if normalized in {"ko", "kr", "kor", "korean", "\ud55c\uad6d\uc5b4"}:
         return "ko"
     raise ValueError("language must be 'en' or 'ko'")
+
+
+def _bool_value(value: Any, *, default: bool) -> bool:
+    if value is None:
+        return default
+    if isinstance(value, bool):
+        return value
+    raise ValueError("boolean config values must be true or false")
 
 
 def _category_hints(value: Any) -> dict[str, list[str]]:

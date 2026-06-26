@@ -16,6 +16,9 @@ vault.
 - Start with route, then read returned notes.
 - Record meaningful completed work into category history.
 - Append daily notes only as short backlinks.
+- OAB auto-memory defaults to on.
+- Treat `/oab status`, `/oab on`, `/oab off`, and `/oab set ...` as shorthand for the `oab` CLI command or `obs_oab` MCP tool.
+- When subagents are available, delegate durable vault recording to a memory-recorder subagent. That subagent should only route, read, and record vault memory.
 - Never write credentials, tokens, passwords, or secrets.
 - Prefer the CLI over direct Markdown edits.
 
@@ -39,6 +42,15 @@ Check vault health:
 python cli/obs_agent.py check --json
 ```
 
+Control OAB auto-memory:
+
+```powershell
+python cli/obs_agent.py oab status --json
+python cli/obs_agent.py oab on --json
+python cli/obs_agent.py oab off --json
+python cli/obs_agent.py oab set memoryRecorderAgent on --json
+```
+
 When MCP is configured, prefer these tools:
 
 - `obs_route`
@@ -46,6 +58,7 @@ When MCP is configured, prefer these tools:
 - `obs_search`
 - `obs_record`
 - `obs_check`
+- `obs_oab`
 
 Use `--config <path>` for custom vault paths, daily folders, route hints, and
 history templates.

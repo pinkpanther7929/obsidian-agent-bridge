@@ -83,6 +83,26 @@ class CoreTests(unittest.TestCase):
         self.assertIn("Category: projects/ai/agents", result.note_text)
         self.assertIn("[[projects/ai/agents/history/2026-06-26-curator-workflow", result.daily_link)
 
+    def test_config_loads_oab_defaults_and_overrides(self) -> None:
+        self.assertTrue(AppConfig.load(str(Path("missing-config.json"))).auto_record)
+
+        vault = self.make_vault()
+        config_path = vault.root / "config.json"
+        config_path.write_text(
+            json.dumps(
+                {
+                    "autoRecord": False,
+                    "memoryRecorderAgent": False,
+                    "includePrompt": False,
+                }
+            ),
+            encoding="utf-8",
+        )
+        config = AppConfig.load(str(config_path))
+        self.assertFalse(config.auto_record)
+        self.assertFalse(config.memory_recorder_agent)
+        self.assertFalse(config.include_prompt)
+
     def test_korean_language_localizes_route_reason(self) -> None:
         vault = self.make_vault()
         result = route(vault, request="MCP agent memory", language="ko")
@@ -142,6 +162,7 @@ class CoreTests(unittest.TestCase):
         listed = handle({"jsonrpc": "2.0", "id": 1, "method": "tools/list"})
         self.assertIsNotNone(listed)
         self.assertIn("obs_route", {tool["name"] for tool in listed["result"]["tools"]})
+        self.assertIn("obs_oab", {tool["name"] for tool in listed["result"]["tools"]})
 
         vault = self.make_vault()
         called = handle(
@@ -162,6 +183,24 @@ class CoreTests(unittest.TestCase):
         self.assertIsNotNone(called)
         content = called["result"]["content"][0]["text"]
         self.assertIn("projects/ai/agents", content)
+
+    def test_mcp_oab_status_and_off(self) -> None:
+        vault = self.make_vault()
+        config_path = vault.root / "config.json"
+        called = handle(
+            {
+                "jsonrpc": "2.0",
+                "id": 3,
+                "method": "tools/call",
+                "params": {
+                    "name": "obs_oab",
+                    "arguments": {"config": str(config_path), "action": "off"},
+                },
+            }
+        )
+        self.assertIsNotNone(called)
+        content = called["result"]["content"][0]["text"]
+        self.assertIn('"autoRecord": false', content)
 
 
 if __name__ == "__main__":
