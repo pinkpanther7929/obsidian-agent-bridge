@@ -1,0 +1,21 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "obsidian-agent-bridge"
+version = "0.1.0"
+description = "Local-first Obsidian memory tools for coding agents."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "hsublee" }]
+keywords = ["obsidian", "agent", "codex", "claude", "memory", "mcp"]
+dependencies = []
+
+[project.scripts]
+obs-agent = "obsidian_agent_bridge.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["obsidian_agent_bridge"]
+
