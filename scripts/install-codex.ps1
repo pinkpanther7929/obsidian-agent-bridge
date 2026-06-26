@@ -14,7 +14,6 @@ if (-not (Test-Path -LiteralPath $ConfigPath)) {
   New-Item -ItemType File -Path $ConfigPath | Out-Null
 }
 
-$runScript = Join-Path $RepoPath "scripts\run-mcp.ps1"
 $notifyScript = Join-Path $RepoPath "scripts\codex-notify.ps1"
 $existing = Get-Content -LiteralPath $ConfigPath -Raw
 
@@ -33,19 +32,26 @@ else {
   Write-Host "Codex notify hook already registered: obsidian-agent-bridge auto-record"
 }
 
-if ($existing -match "\[mcp_servers\.obsidian_agent_bridge\]") {
-  Write-Host "Codex MCP server already registered: obsidian_agent_bridge"
-}
-else {
-  $block = @"
+$escapedRepoPath = $RepoPath -replace "'", "''"
+$serverBlock = @"
 
 [mcp_servers.obsidian_agent_bridge]
-command = 'powershell.exe'
-args = ['-NoProfile', '-File', '$runScript']
+command = 'python'
+args = ['-m', 'mcp_server.server']
 startup_timeout_sec = 30
+
+[mcp_servers.obsidian_agent_bridge.env]
+PYTHONPATH = '$escapedRepoPath'
 "@
 
-  Add-Content -LiteralPath $ConfigPath -Value $block
+$pattern = "(?ms)^\[mcp_servers\.obsidian_agent_bridge\]\r?\n.*?(?=^\[(?!mcp_servers\.obsidian_agent_bridge(?:\.env)?\])|\z)"
+if ($existing -match $pattern) {
+  $updated = [regex]::Replace($existing, $pattern, $serverBlock.TrimStart(), 1)
+  Set-Content -LiteralPath $ConfigPath -Value $updated -Encoding UTF8
+  Write-Host "Updated Codex MCP server: obsidian_agent_bridge"
+}
+else {
+  Add-Content -LiteralPath $ConfigPath -Value $serverBlock
   Write-Host "Registered Codex MCP server: obsidian_agent_bridge"
 }
 Write-Host "Restart Codex to load it."

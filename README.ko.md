@@ -50,9 +50,12 @@ cd D:\obsidian-agent-bridge
 notify = ['powershell.exe', '-NoProfile', '-File', 'D:\obsidian-agent-bridge\scripts\codex-notify.ps1', 'turn-ended']
 
 [mcp_servers.obsidian_agent_bridge]
-command = 'powershell.exe'
-args = ['-NoProfile', '-File', 'D:\obsidian-agent-bridge\scripts\run-mcp.ps1']
+command = 'python'
+args = ['-m', 'mcp_server.server']
 startup_timeout_sec = 30
+
+[mcp_servers.obsidian_agent_bridge.env]
+PYTHONPATH = 'D:\obsidian-agent-bridge'
 ```
 
 npm 전역 설치 후 사용할 수 있는 명령:
