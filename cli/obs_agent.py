@@ -52,6 +52,7 @@ def cmd_record(args: argparse.Namespace) -> int:
         summary=args.summary,
         date=args.date,
         daily_folder=config.daily_folder,
+        history_template=config.history_template,
         dry_run=args.dry_run,
     )
     emit(asdict(result), args.json)

@@ -27,6 +27,7 @@ def default_config_path() -> Path:
 class AppConfig:
     vault: str | None = None
     daily_folder: str = "daily"
+    history_template: str = "# {date} {title}\n\n{summary}\n"
     category_hints: dict[str, list[str]] = field(default_factory=lambda: dict(DEFAULT_CATEGORY_HINTS))
 
     @classmethod
@@ -40,6 +41,11 @@ class AppConfig:
         return cls(
             vault=_optional_str(data.get("vault")),
             daily_folder=_str_value(data.get("dailyFolder"), "dailyFolder", default="daily"),
+            history_template=_str_value(
+                data.get("historyTemplate"),
+                "historyTemplate",
+                default="# {date} {title}\n\n{summary}\n",
+            ),
             category_hints=_category_hints(data.get("categoryHints")),
         )
 

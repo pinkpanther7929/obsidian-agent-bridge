@@ -39,6 +39,7 @@ exists. Override that with `--config` or `OBS_AGENT_CONFIG`.
 {
   "vault": "~/Documents/Obsidian Vault",
   "dailyFolder": "daily",
+  "historyTemplate": "# {date} {title}\n\n{summary}\n",
   "categoryHints": {
     "projects/engineering/backend": ["backend", "api", "auth", "database"],
     "projects/ai/agents": ["agent", "mcp", "tool", "memory"]
@@ -47,6 +48,7 @@ exists. Override that with `--config` or `OBS_AGENT_CONFIG`.
 ```
 
 `--vault` wins over the config file.
+`historyTemplate` supports `{date}`, `{title}`, `{summary}`, and `{category}`.
 
 Routing also scans `projects/*/*/index.md` in the vault. Category path parts,
 index headings, and wikilink targets become route hints, so a vault can work
@@ -69,6 +71,8 @@ python cli\obs_agent.py route `
 ### `record`
 
 Writes a category history note and appends one deduplicated daily backlink.
+Use `--dry-run` to preview the note path, daily link, and note text without
+writing files.
 
 ```powershell
 python cli\obs_agent.py record `

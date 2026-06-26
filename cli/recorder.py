@@ -17,6 +17,8 @@ class RecordResult:
     daily_path: str
     daily_added: bool
     dry_run: bool
+    daily_link: str
+    note_text: str
 
 
 def normalize_category(category: str) -> str:
@@ -37,6 +39,7 @@ def record(
     summary: str,
     date: str | None = None,
     daily_folder: str = "daily",
+    history_template: str = "# {date} {title}\n\n{summary}\n",
     dry_run: bool = False,
 ) -> RecordResult:
     day = date or dt.date.today().isoformat()
@@ -49,12 +52,20 @@ def record(
     note_rel = f"{category_path}/history/{day}-{slug}.md"
     daily_rel = f"{daily_folder.strip().strip('/')}/{day}.md"
     link = f"- [[{note_rel[:-3]}|{category_path.replace('projects/', '')}: {title}]]"
-    text = f"# {day} {title}\n\n{summary.strip()}\n"
+    try:
+        text = history_template.format(
+            category=category_path,
+            date=day,
+            summary=summary.strip(),
+            title=title,
+        )
+    except KeyError as exc:
+        raise VaultError(f"Unknown historyTemplate placeholder: {exc.args[0]}") from exc
     assert_no_secrets(text)
 
     if dry_run:
-        return RecordResult(note_rel, daily_rel, False, True)
+        return RecordResult(note_rel, daily_rel, False, True, link, text.rstrip() + "\n")
 
     vault.write_text(note_rel, text)
     daily_added = vault.append_unique_line(daily_rel, link)
-    return RecordResult(note_rel, daily_rel, daily_added, False)
+    return RecordResult(note_rel, daily_rel, daily_added, False, link, text.rstrip() + "\n")

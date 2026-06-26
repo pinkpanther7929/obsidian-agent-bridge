@@ -57,6 +57,7 @@ class CoreTests(unittest.TestCase):
             json.dumps(
                 {
                     "dailyFolder": "journal",
+                    "historyTemplate": "# {title}\n\n{summary}\n\nCategory: {category}\n",
                     "categoryHints": {"projects/ai/agents": ["curator"]},
                 }
             ),
@@ -71,9 +72,13 @@ class CoreTests(unittest.TestCase):
             summary="Added workflow.",
             date="2026-06-26",
             daily_folder=config.daily_folder,
+            history_template=config.history_template,
+            dry_run=True,
         )
         self.assertEqual(routed.category, "projects/ai/agents")
         self.assertEqual(result.daily_path, "journal/2026-06-26.md")
+        self.assertIn("Category: projects/ai/agents", result.note_text)
+        self.assertIn("[[projects/ai/agents/history/2026-06-26-curator-workflow", result.daily_link)
 
     def test_route_learns_categories_from_vault_indexes(self) -> None:
         vault = self.make_vault()
