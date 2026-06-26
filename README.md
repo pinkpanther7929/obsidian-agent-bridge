@@ -17,15 +17,15 @@ wrap the same CLI later.
 ## Quick Start
 
 ```powershell
-python -m obsidian_agent_bridge route --cwd D:\devops-infra.main --path jenkins\foo.py
-python -m obsidian_agent_bridge record --category devops-infra/local-llm --title "vs-token-safer applied" --summary "Configured local token-saving tool."
+python -m obsidian_agent_bridge route --cwd C:\work\app --path src\auth\session.py
+python -m obsidian_agent_bridge record --category engineering/backend --title "auth session fix" --summary "Fixed stale session cleanup."
 python -m obsidian_agent_bridge check
 ```
 
 Default vault:
 
 ```text
-C:\Users\hsublee\Documents\Obsidian Vault
+~/Documents/Obsidian Vault
 ```
 
 Override with `--vault` or `OBSIDIAN_VAULT_PATH`.
@@ -38,9 +38,9 @@ Suggests a category and minimal read set from cwd, paths, and request text.
 
 ```powershell
 python -m obsidian_agent_bridge route `
-  --cwd D:\devops-infra.main `
-  --path jenkins\jenkinsfiles\resources\jenkins_failure_analysis\foo.py `
-  --request "Fix Jenkins Slack user mapping" `
+  --cwd C:\work\app `
+  --path src\auth\session.py `
+  --request "Fix stale login sessions" `
   --json
 ```
 
@@ -50,9 +50,9 @@ Writes a category history note and appends one deduplicated daily backlink.
 
 ```powershell
 python -m obsidian_agent_bridge record `
-  --category devops-infra/local-llm `
-  --title "vs-token-safer applied" `
-  --summary "Configured local token-saving tool." `
+  --category engineering/backend `
+  --title "auth session fix" `
+  --summary "Fixed stale session cleanup." `
   --json
 ```
 

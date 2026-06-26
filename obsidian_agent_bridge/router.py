@@ -7,18 +7,12 @@ from pathlib import Path
 from .vault import Vault
 
 CATEGORY_HINTS: dict[str, list[str]] = {
-    "projects/devops-infra/jenkins": ["jenkins", "pipeline", "build log", "failure", "slack user map"],
-    "projects/devops-infra/local-llm": ["local llm", "llm", "mcp", "codex", "claude", "agent", "vs-token-safer", "token"],
-    "projects/devops-infra/deploy-web": ["deploy-web", "deploy web", "callback", "frontend deploy"],
-    "projects/devops-infra/monitoring": ["monitoring", "prometheus", "grafana", "alert"],
-    "projects/devops-infra/logging": ["logging", "elk", "elastic", "kibana", "logstash"],
-    "projects/devops-infra/kubernetes": ["kubernetes", "k8s", "pod", "pvc", "cluster"],
-    "projects/devops-infra/argocd": ["argocd", "argo cd", "manifest", "sync"],
-    "projects/devops-infra/docker-compose": ["docker-compose", "compose"],
-    "projects/devops-infra/ftp-package": ["ftp", "package", "artifact"],
-    "projects/UnrealEngine/ugs": ["ugs", "unrealgamesync"],
-    "projects/UnrealEngine/gauntlet": ["gauntlet"],
-    "projects/UnrealEngine/buildtool": ["ubt", "buildtool", "unreal build tool"],
+    "projects/engineering/backend": ["backend", "api", "auth", "database", "session"],
+    "projects/engineering/frontend": ["frontend", "ui", "web", "react", "css"],
+    "projects/engineering/build": ["build", "ci", "pipeline", "test", "failure"],
+    "projects/operations/deploy": ["deploy", "release", "kubernetes", "docker", "argocd"],
+    "projects/ai/agents": ["agent", "codex", "claude", "mcp", "tool", "memory"],
+    "projects/ai/local-models": ["local llm", "llm", "model", "inference", "token"],
 }
 
 
@@ -53,7 +47,7 @@ def _score_category(category: str, blob: str) -> tuple[int, list[str]]:
 def route(vault: Vault, *, cwd: str | None = None, paths: list[str] | None = None, request: str | None = None) -> RouteResult:
     paths = paths or []
     blob = _text_blob(cwd, paths, request)
-    best_category = "projects/devops-infra"
+    best_category = "projects"
     best_score = 0
     best_matches: list[str] = []
 
@@ -82,4 +76,3 @@ def slugify(value: str) -> str:
     value = re.sub(r"[^a-z0-9가-힣._-]+", "-", value)
     value = re.sub(r"-{2,}", "-", value).strip("-")
     return value or "note"
-

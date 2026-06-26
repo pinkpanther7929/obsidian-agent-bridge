@@ -22,7 +22,7 @@ def normalize_category(category: str) -> str:
     parts = category.split("/")
     if len(parts) == 2:
         return f"projects/{parts[0]}/{parts[1]}"
-    raise VaultError("Category must look like 'devops-infra/local-llm' or 'projects/devops-infra/local-llm'")
+    raise VaultError("Category must look like 'engineering/backend' or 'projects/engineering/backend'")
 
 
 def record(
@@ -53,4 +53,3 @@ def record(
     vault.write_text(note_rel, text)
     daily_added = vault.append_unique_line(daily_rel, link)
     return RecordResult(note_rel, daily_rel, daily_added, False)
-

@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable
 
-DEFAULT_VAULT = Path(os.environ.get("OBSIDIAN_VAULT_PATH", r"C:\Users\hsublee\Documents\Obsidian Vault"))
+DEFAULT_VAULT = Path(os.environ.get("OBSIDIAN_VAULT_PATH", str(Path.home() / "Documents" / "Obsidian Vault")))
 SECRET_RE = re.compile(
     r"(?i)(api[_-]?key|api[_-]?token|password|passwd|secret|bearer)\s*[:=]\s*[^\s<]+"
 )
@@ -78,4 +78,3 @@ def assert_no_secrets(text: str) -> None:
     for line_no, line in enumerate(text.splitlines(), start=1):
         if SECRET_RE.search(line) and "<redacted>" not in line and "${" not in line:
             raise VaultError(f"Secret-looking content at line {line_no}")
-

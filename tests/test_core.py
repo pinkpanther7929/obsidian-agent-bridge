@@ -17,30 +17,30 @@ class CoreTests(unittest.TestCase):
         self.addCleanup(tmp.cleanup)
         root = Path(tmp.name)
         (root / "CODEX.md").write_text("# CODEX\n", encoding="utf-8")
-        category = root / "projects" / "devops-infra" / "local-llm"
+        category = root / "projects" / "ai" / "agents"
         category.mkdir(parents=True)
         (category / "index.md").write_text("# Local LLM\n", encoding="utf-8")
         return Vault(root)
 
-    def test_route_prefers_local_llm_for_vts(self) -> None:
+    def test_route_prefers_agent_notes(self) -> None:
         vault = self.make_vault()
-        result = route(vault, cwd=r"D:\devops-infra.main", request="Apply D:\\vs-token-safer")
-        self.assertEqual(result.category, "projects/devops-infra/local-llm")
+        result = route(vault, cwd=r"C:\work\app", request="Add an MCP agent memory tool")
+        self.assertEqual(result.category, "projects/ai/agents")
         self.assertIn("CODEX.md", result.read_set)
 
     def test_record_writes_history_and_daily_once(self) -> None:
         vault = self.make_vault()
         first = record(
             vault,
-            category="devops-infra/local-llm",
-            title="vs-token-safer applied",
+            category="ai/agents",
+            title="agent memory tool",
             summary="Configured tool.",
             date="2026-06-26",
         )
         second = record(
             vault,
-            category="devops-infra/local-llm",
-            title="vs-token-safer applied",
+            category="ai/agents",
+            title="agent memory tool",
             summary="Configured tool.",
             date="2026-06-26",
         )
