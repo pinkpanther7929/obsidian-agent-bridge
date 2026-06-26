@@ -81,6 +81,22 @@ class CoreTests(unittest.TestCase):
         self.assertIn("Category: projects/ai/agents", result.note_text)
         self.assertIn("[[projects/ai/agents/history/2026-06-26-curator-workflow", result.daily_link)
 
+    def test_korean_language_localizes_route_reason(self) -> None:
+        vault = self.make_vault()
+        result = route(vault, request="MCP agent memory", language="ko")
+        self.assertTrue(result.reason.startswith("\uc77c\uce58\ud55c \ud78c\ud2b8"))
+
+    def test_korean_language_localizes_category_errors(self) -> None:
+        with self.assertRaisesRegex(Exception, "\uce74\ud14c\uace0\ub9ac"):
+            record(
+                self.make_vault(),
+                category="bad",
+                title="\uc81c\ubaa9",
+                summary="\uc694\uc57d",
+                language="ko",
+                dry_run=True,
+            )
+
     def test_route_learns_categories_from_vault_indexes(self) -> None:
         vault = self.make_vault()
         category = vault.root / "projects" / "research" / "papers"

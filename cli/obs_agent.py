@@ -37,7 +37,14 @@ def emit(data: object, as_json: bool) -> None:
 def cmd_route(args: argparse.Namespace) -> int:
     config = AppConfig.load(args.config)
     vault = Vault.open(args.vault or config.vault)
-    result = route(vault, cwd=args.cwd, paths=args.path or [], request=args.request, category_hints=config.category_hints)
+    result = route(
+        vault,
+        cwd=args.cwd,
+        paths=args.path or [],
+        request=args.request,
+        category_hints=config.category_hints,
+        language=config.language,
+    )
     emit(asdict(result), args.json)
     return 0
 
@@ -53,6 +60,7 @@ def cmd_record(args: argparse.Namespace) -> int:
         date=args.date,
         daily_folder=config.daily_folder,
         history_template=config.history_template,
+        language=config.language,
         dry_run=args.dry_run,
     )
     emit(asdict(result), args.json)

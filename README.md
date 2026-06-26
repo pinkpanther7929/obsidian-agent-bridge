@@ -70,6 +70,7 @@ Example:
 ```json
 {
   "vault": "~/Documents/Obsidian Vault",
+  "language": "en",
   "dailyFolder": "daily",
   "historyTemplate": "# {date} {title}\n\n{summary}\n",
   "categoryHints": {
@@ -79,12 +80,19 @@ Example:
 }
 ```
 
-`--vault` wins over the config file. `historyTemplate` supports `{date}`,
+`language` supports `en` and `ko`. It localizes route reasons and validation
+errors. `--vault` wins over the config file. `historyTemplate` supports `{date}`,
 `{title}`, `{summary}`, and `{category}`.
 
 Routing also scans `projects/*/*/index.md`. Category path parts, index headings,
 and wikilink targets become route hints, so a vault can work without listing
 every category in config.
+
+## Language
+
+Set `"language": "en"` or `"language": "ko"` in config. English is the default.
+Korean mode localizes route reasons and validation errors while keeping JSON
+field names stable for agents.
 
 ## Commands
 

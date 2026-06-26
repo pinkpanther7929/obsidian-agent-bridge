@@ -7,9 +7,11 @@ from typing import Iterable
 
 try:
     from .config import DEFAULT_CATEGORY_HINTS
+    from .i18n import message
     from .vault import Vault
 except ImportError:
     from config import DEFAULT_CATEGORY_HINTS
+    from i18n import message
     from vault import Vault
 
 STOPWORDS = {"current", "history", "index", "issue", "issues", "note", "notes", "project", "projects", "task", "tasks"}
@@ -31,7 +33,7 @@ def _text_blob(cwd: str | None, paths: list[str], request: str | None) -> str:
 def _words(value: str) -> list[str]:
     return [
         word
-        for word in re.split(r"[^A-Za-z0-9가-힣]+", value.casefold())
+        for word in re.split(r"[^A-Za-z0-9\uac00-\ud7a3]+", value.casefold())
         if len(word) >= 2 and word not in STOPWORDS
     ]
 
@@ -96,6 +98,7 @@ def route(
     paths: list[str] | None = None,
     request: str | None = None,
     category_hints: dict[str, list[str]] | None = None,
+    language: str = "en",
 ) -> RouteResult:
     paths = paths or []
     hints_by_category = build_category_hints(vault, category_hints or DEFAULT_CATEGORY_HINTS)
@@ -113,11 +116,11 @@ def route(
 
     if best_score == 0:
         read_set = ["CODEX.md"]
-        reason = "No category hint matched; read root routing only."
+        reason = message(language, "no_route")
         confidence = 0.2
     else:
         read_set = ["CODEX.md", f"{best_category}/index.md"]
-        reason = "Matched " + ", ".join(sorted(set(best_matches)))
+        reason = message(language, "matched", matches=", ".join(sorted(set(best_matches))))
         confidence = min(0.95, 0.35 + best_score / 20)
 
     read_set = [path for path in read_set if vault.path(path).exists()]
@@ -126,6 +129,6 @@ def route(
 
 def slugify(value: str) -> str:
     value = value.strip().casefold()
-    value = re.sub(r"[^a-z0-9가-힣._-]+", "-", value)
+    value = re.sub(r"[^a-z0-9\uac00-\ud7a3._-]+", "-", value)
     value = re.sub(r"-{2,}", "-", value).strip("-")
     return value or "note"

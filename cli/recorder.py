@@ -4,9 +4,11 @@ import datetime as dt
 from dataclasses import dataclass
 
 try:
+    from .i18n import message
     from .router import slugify
     from .vault import Vault, VaultError, assert_no_secrets
 except ImportError:
+    from i18n import message
     from router import slugify
     from vault import Vault, VaultError, assert_no_secrets
 
@@ -21,14 +23,14 @@ class RecordResult:
     note_text: str
 
 
-def normalize_category(category: str) -> str:
+def normalize_category(category: str, *, language: str = "en") -> str:
     category = category.strip().replace("\\", "/").strip("/")
     if category.startswith("projects/"):
         return category
     parts = category.split("/")
     if len(parts) == 2:
         return f"projects/{parts[0]}/{parts[1]}"
-    raise VaultError("Category must look like 'engineering/backend' or 'projects/engineering/backend'")
+    raise VaultError(message(language, "category_shape"))
 
 
 def record(
@@ -40,10 +42,11 @@ def record(
     date: str | None = None,
     daily_folder: str = "daily",
     history_template: str = "# {date} {title}\n\n{summary}\n",
+    language: str = "en",
     dry_run: bool = False,
 ) -> RecordResult:
     day = date or dt.date.today().isoformat()
-    category_path = normalize_category(category)
+    category_path = normalize_category(category, language=language)
     index_path = vault.path(f"{category_path}/index.md")
     if not index_path.exists():
         raise VaultError(f"Category index not found: {category_path}/index.md")
@@ -60,7 +63,7 @@ def record(
             title=title,
         )
     except KeyError as exc:
-        raise VaultError(f"Unknown historyTemplate placeholder: {exc.args[0]}") from exc
+        raise VaultError(message(language, "unknown_placeholder", name=exc.args[0])) from exc
     assert_no_secrets(text)
 
     if dry_run:
