@@ -1,0 +1,41 @@
+{
+  "name": "obsidian-agent-bridge",
+  "version": "0.1.0",
+  "description": "Local-first Obsidian memory tools for coding agents.",
+  "homepage": "https://github.com/pinkpanther7929/obsidian-agent-bridge",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pinkpanther7929/obsidian-agent-bridge.git"
+  },
+  "license": "MIT",
+  "author": "pinkpanther7929",
+  "keywords": [
+    "obsidian",
+    "mcp",
+    "memory",
+    "agent",
+    "claude-code",
+    "codex"
+  ],
+  "bin": {
+    "obs-agent": "bin/obs-agent.js",
+    "obs-agent-mcp": "bin/obs-agent-mcp.js"
+  },
+  "files": [
+    ".claude-plugin/",
+    "agents/",
+    "bin/",
+    "cli/*.py",
+    "examples/",
+    "mcp_server/*.py",
+    "scripts/",
+    "skills/",
+    "README.md",
+    "README.ko.md",
+    "LICENSE",
+    "pyproject.toml"
+  ],
+  "scripts": {
+    "test": "python -m unittest discover -s tests"
+  }
+}

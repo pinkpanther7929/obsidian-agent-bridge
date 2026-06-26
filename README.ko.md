@@ -1,72 +1,88 @@
-# obsidian-agent-bridge
+﻿# obsidian-agent-bridge
 
-[English](README.md) | 한국어
+[English](README.md) | Korean
 
-코딩 에이전트를 위한 로컬 우선 Obsidian 메모리 도구입니다.
+Claude Code, Codex, MCP 호환 코딩 에이전트가 Obsidian Vault를 로컬 메모리처럼 쓰게 해주는 브리지입니다.
 
-`obsidian-agent-bridge`는 Obsidian Vault를 단순한 Markdown 폴더가 아니라
-작고 예측 가능한 에이전트 메모리 시스템처럼 사용할 수 있게 해줍니다.
-작업을 알맞은 프로젝트 노트로 라우팅하고, 완료된 작업을 카테고리별
-히스토리에 기록하며, Vault의 링크/기록 상태를 점검합니다.
+작업을 알맞은 Vault 카테고리로 라우팅하고, 읽어야 할 최소 노트 목록을 돌려주며, 완료된 작업을 히스토리 노트로 기록하고, Vault 위생 상태를 점검합니다. 모든 처리는 로컬에서 끝납니다.
+
+## 설치
+
+### Claude Code
+
+빠른 로컬 설정:
+
+```powershell
+git clone https://github.com/pinkpanther7929/obsidian-agent-bridge.git D:\obsidian-agent-bridge
+cd D:\obsidian-agent-bridge
+.\scripts\write-config.ps1 -Vault "$env:USERPROFILE\Documents\Obsidian Vault" -Language ko
+.\scripts\install-claude.ps1
+```
+
+위 스크립트는 Claude Code에 MCP 서버를 등록합니다:
+
+```powershell
+claude mcp add -s user obsidian-agent-bridge -- powershell.exe -NoProfile -File D:\obsidian-agent-bridge\scripts\run-mcp.ps1
+```
+
+`.claude-plugin/plugin.json`도 포함되어 있습니다. Claude Code 플러그인 마켓플레이스/워크플로에 이 저장소를 추가하면 플러그인 소스로 사용할 수 있게 준비해 둔 상태입니다.
+
+### Codex
+
+npm으로 GitHub 저장소를 전역 설치할 수 있습니다:
+
+```powershell
+npm install -g github:pinkpanther7929/obsidian-agent-bridge
+```
+
+그다음 Codex MCP 설정을 등록합니다:
+
+```powershell
+git clone https://github.com/pinkpanther7929/obsidian-agent-bridge.git D:\obsidian-agent-bridge
+cd D:\obsidian-agent-bridge
+.\scripts\write-config.ps1 -Vault "$env:USERPROFILE\Documents\Obsidian Vault" -Language ko
+.\scripts\install-codex.ps1
+```
+
+등록 후 Codex를 재시작해야 합니다. 설치 스크립트는 `~/.codex/config.toml`에 아래 블록이 없으면 추가합니다:
+
+```toml
+[mcp_servers.obsidian_agent_bridge]
+command = 'powershell.exe'
+args = ['-NoProfile', '-File', 'D:\obsidian-agent-bridge\scripts\run-mcp.ps1']
+startup_timeout_sec = 30
+```
+
+npm 전역 설치 후 사용할 수 있는 명령:
+
+```powershell
+obs-agent route --request "Update project memory" --json
+obs-agent-mcp
+```
 
 ## 기능
 
-- `cwd`, 파일 경로, 요청 문장을 기반으로 작업을 프로젝트/카테고리에 라우팅합니다.
+- `cwd`, 파일 경로, 요청 문장을 보고 프로젝트/카테고리를 라우팅합니다.
 - 에이전트가 Vault 전체를 읽지 않도록 최소 `read_set`을 반환합니다.
 - 완료된 작업을 `projects/<project>/<category>/history/`에 기록합니다.
-- daily note에는 중복 없는 짧은 backlink 하나만 추가합니다.
-- 누락/모호한 note link, 중복 daily backlink, secret처럼 보이는 내용을 점검합니다.
-- Vault 경로, 라우팅 힌트, daily 폴더, 히스토리 템플릿을 config로 설정할 수 있습니다.
-
-현재 기본 인터페이스는 CLI입니다. Agent spec, skill, MCP server가 같은 기능을 감싸서 사용합니다.
-의존성 없는 stdio MCP server도 포함되어 있습니다.
+- daily note에는 중복 없는 backlink 하나만 추가합니다.
+- `archive/`를 기본 제외하고 Vault 노트를 읽고 검색합니다.
+- 누락/모호한 노트 링크, 중복 daily backlink, secret처럼 보이는 내용을 점검합니다.
+- config로 영어/한국어 메시지를 지원합니다.
 
 ## 저장소 구조
 
 ```text
 obsidian-agent-bridge/
-  cli/
-    obs_agent.py      # CLI 진입점
-    config.py         # config 로딩
-    router.py         # 라우팅 점수 계산 및 Vault 기반 힌트
-    recorder.py       # history + daily 기록
-    checker.py        # 링크/secret 점검
-    vault.py          # 안전한 Vault 파일 접근
+  .claude-plugin/plugin.json
+  bin/                  # npm 명령 wrapper
+  cli/                  # CLI 구현
+  mcp_server/           # 의존성 없는 stdio MCP 서버
+  scripts/              # 설치/실행 helper
   agents/
-    vault-curator.md
-  mcp_server/
-    server.py
-  examples/
-    claude_desktop_config.json
-    codex_config.toml
   skills/
-    obsidian-memory/SKILL.md
+  examples/
   tests/
-    test_core.py
-```
-
-## 빠른 시작
-
-```powershell
-python cli\obs_agent.py route --cwd C:\work\app --path src\auth\session.py --request "Fix stale login sessions" --json
-python cli\obs_agent.py read --path CODEX.md --json
-python cli\obs_agent.py search --query "session" --path-prefix projects --json
-python cli\obs_agent.py record --category engineering/backend --title "auth session fix" --summary "Fixed stale session cleanup." --dry-run --json
-python cli\obs_agent.py check --json
-```
-
-기본 Vault 경로:
-
-```text
-~/Documents/Obsidian Vault
-```
-
-`--vault`, `OBSIDIAN_VAULT_PATH`, `--config`, `OBS_AGENT_CONFIG`로 덮어쓸 수 있습니다.
-
-로컬 config 생성:
-
-```powershell
-.\scripts\write-config.ps1 -Vault "$env:USERPROFILE\Documents\Obsidian Vault" -Language ko
 ```
 
 ## Config
@@ -92,127 +108,35 @@ python cli\obs_agent.py check --json
 }
 ```
 
-`language`는 `en`, `ko`를 지원합니다. 라우팅 이유와 검증 오류 메시지를 현지화합니다.
-`--vault`는 config 파일보다 우선합니다. `historyTemplate`은 `{date}`, `{title}`,
-`{summary}`, `{category}`를 지원합니다.
+`language`는 `en`, `ko`를 지원합니다. `--vault`는 config보다 우선합니다. 라우팅은 `projects/*/*/index.md`의 카테고리 이름, heading, wikilink도 힌트로 사용합니다.
 
-라우팅은 `projects/*/*/index.md`도 스캔합니다. 카테고리 경로, index heading,
-wikilink target이 라우팅 힌트가 되므로 모든 카테고리를 config에 직접 적지 않아도 됩니다.
-
-## 명령
-
-### `route`
-
-작업에 맞는 카테고리와 최소 읽기 노트를 추천합니다.
+## CLI
 
 ```powershell
-python cli\obs_agent.py route `
-  --cwd C:\work\app `
-  --path src\auth\session.py `
-  --request "Fix stale login sessions" `
-  --json
+obs-agent route --cwd C:\work\app --request "Fix stale login sessions" --json
+obs-agent read --path CODEX.md --json
+obs-agent search --query "session" --path-prefix projects --json
+obs-agent record --category engineering/backend --title "auth session fix" --summary "Fixed stale session cleanup." --dry-run --json
+obs-agent check --json
 ```
 
-출력 예시:
-
-```json
-{
-  "category": "projects/engineering/backend",
-  "confidence": 0.55,
-  "reason": "Matched session",
-  "read_set": ["CODEX.md", "projects/engineering/backend/index.md"]
-}
-```
-
-### `record`
-
-히스토리 노트를 만들고 daily backlink를 추가합니다.
+npm 설치 없이 쓸 때:
 
 ```powershell
-python cli\obs_agent.py record `
-  --category engineering/backend `
-  --title "auth session fix" `
-  --summary "Fixed stale session cleanup." `
-  --dry-run `
-  --json
+python cli\obs_agent.py route --request "Fix stale login sessions" --json
 ```
 
-`--dry-run`은 실제 파일을 쓰지 않고 `note_path`, `daily_link`, `note_text`를 미리 보여줍니다.
+## MCP Tools
 
-### `read`
-
-Vault 기준 상대 경로로 note 하나를 읽습니다.
-
-```powershell
-python cli\obs_agent.py read --path CODEX.md --json
-```
-
-### `search`
-
-archive를 제외한 Markdown note를 검색합니다.
-
-```powershell
-python cli\obs_agent.py search `
-  --query "session" `
-  --path-prefix projects `
-  --limit 20 `
-  --json
-```
-
-### `check`
-
-Vault 상태를 점검합니다.
-
-```powershell
-python cli\obs_agent.py check --json
-```
-
-점검 항목:
-
-- 누락된 note link
-- 모호한 짧은 wikilink
-- note를 가리키는 상대 Markdown link
-- 중복 daily backlink
-- secret처럼 보이는 내용
-
-## Agent Workflow
-
-권장 에이전트 흐름:
-
-1. `route` 실행
-2. 반환된 `read_set`만 읽기
-3. 사용자 작업 수행
-4. `record --dry-run` 실행
-5. 대상 카테고리와 note text 확인
-6. `record` 실행
-7. 필요하면 `check` 실행
-
-포함된 agent/skill 문서:
-
-- [`agents/vault-curator.md`](agents/vault-curator.md)
-- [`skills/obsidian-memory/SKILL.md`](skills/obsidian-memory/SKILL.md)
-
-## MCP Server
-
-stdio MCP server 실행:
+서버 실행:
 
 ```powershell
 python -m mcp_server.server
-```
-
-Windows에서는 cwd-safe wrapper도 제공합니다.
-
-```powershell
-powershell.exe -NoProfile -File D:\obsidian-agent-bridge\scripts\run-mcp.ps1
-```
-
-패키지로 설치했다면:
-
-```powershell
+# 또는
 obs-agent-mcp
 ```
 
-MCP tools:
+도구:
 
 - `obs_route`
 - `obs_read`
@@ -220,45 +144,20 @@ MCP tools:
 - `obs_record`
 - `obs_check`
 
-Claude Desktop 예시:
+권장 에이전트 흐름:
 
-```json
-{
-  "mcpServers": {
-    "obsidian-agent-bridge": {
-      "command": "python",
-      "args": ["-m", "mcp_server.server"],
-      "cwd": "D:\\obsidian-agent-bridge"
-    }
-  }
-}
-```
+1. `obs_route` 호출
+2. 반환된 `read_set`만 `obs_read`로 읽기
+3. 사용자 작업 수행
+4. `obs_record`에 `dry_run: true`로 미리보기
+5. 최종 작업을 `obs_record`로 기록
+6. 필요하면 `obs_check` 실행
 
-Codex config 예시:
-
-```toml
-[mcp_servers.obsidian-agent-bridge]
-command = "python"
-args = ["-m", "mcp_server.server"]
-cwd = "D:\\obsidian-agent-bridge"
-```
-
-Claude Code 등록 명령:
-
-```powershell
-claude mcp add -s user obsidian-agent-bridge -- powershell.exe -NoProfile -File D:\obsidian-agent-bridge\scripts\run-mcp.ps1
-```
-
-복사 가능한 설정 예시는 [`examples/`](examples/)에 있습니다.
-
-Claude/Codex 프로젝트 지시는 [`examples/AGENTS.md`](examples/AGENTS.md)의 내용을 참고하면 됩니다.
+Claude/Codex 설정 예시는 [`examples/`](examples/)에 있고, 프로젝트 지시문 예시는 [`examples/AGENTS.md`](examples/AGENTS.md)에 있습니다.
 
 ## 개발
 
-테스트 실행:
-
 ```powershell
 python -m unittest discover -s tests
+python -m py_compile cli\*.py mcp_server\*.py
 ```
-
-GitHub Actions도 push/pull request에서 같은 테스트를 실행합니다.

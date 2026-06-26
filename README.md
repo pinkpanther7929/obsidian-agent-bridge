@@ -1,13 +1,64 @@
-# obsidian-agent-bridge
+﻿# obsidian-agent-bridge
 
-English | [한국어](README.ko.md)
+English | [Korean](README.ko.md)
 
-Local-first Obsidian memory tools for coding agents.
+Local-first Obsidian memory bridge for Claude Code, Codex, and MCP-compatible coding agents.
 
-`obsidian-agent-bridge` helps an agent treat an Obsidian vault as a small,
-predictable memory system instead of a folder full of Markdown files. It routes
-work to the right project notes, records completed work in category history, and
-checks the vault for memory hygiene issues.
+It routes a task to the right vault category, returns a small read set, records completed work into history notes, and checks vault hygiene. Everything stays on your machine.
+
+## Install
+
+### Claude Code
+
+Fast local setup:
+
+```powershell
+git clone https://github.com/pinkpanther7929/obsidian-agent-bridge.git D:\obsidian-agent-bridge
+cd D:\obsidian-agent-bridge
+.\scripts\write-config.ps1 -Vault "$env:USERPROFILE\Documents\Obsidian Vault" -Language en
+.\scripts\install-claude.ps1
+```
+
+This registers the MCP server in Claude Code:
+
+```powershell
+claude mcp add -s user obsidian-agent-bridge -- powershell.exe -NoProfile -File D:\obsidian-agent-bridge\scripts\run-mcp.ps1
+```
+
+Plugin-ready metadata is included at `.claude-plugin/plugin.json`, so this repo can also be used as a Claude Code plugin source when added to a Claude plugin marketplace/workflow.
+
+### Codex
+
+Install from GitHub through npm:
+
+```powershell
+npm install -g github:pinkpanther7929/obsidian-agent-bridge
+```
+
+Then register the MCP server:
+
+```powershell
+git clone https://github.com/pinkpanther7929/obsidian-agent-bridge.git D:\obsidian-agent-bridge
+cd D:\obsidian-agent-bridge
+.\scripts\write-config.ps1 -Vault "$env:USERPROFILE\Documents\Obsidian Vault" -Language en
+.\scripts\install-codex.ps1
+```
+
+Restart Codex after registration. The installer appends this block to `~/.codex/config.toml` if missing:
+
+```toml
+[mcp_servers.obsidian_agent_bridge]
+command = 'powershell.exe'
+args = ['-NoProfile', '-File', 'D:\obsidian-agent-bridge\scripts\run-mcp.ps1']
+startup_timeout_sec = 30
+```
+
+Global commands after npm install:
+
+```powershell
+obs-agent route --request "Update project memory" --json
+obs-agent-mcp
+```
 
 ## What It Does
 
@@ -15,61 +66,23 @@ checks the vault for memory hygiene issues.
 - Returns a minimal `read_set` so agents do not load the whole vault.
 - Records completed work into `projects/<project>/<category>/history/`.
 - Appends one deduplicated daily backlink.
-- Checks missing/ambiguous note links, duplicate daily backlinks, and
-  secret-looking content.
-- Reads optional config for vault path, route hints, daily folder, and history
-  note template.
-
-The current interface is a CLI. Agent specs, skills, and future MCP tools wrap
-the same behavior. A dependency-free stdio MCP server is included.
+- Reads/searches vault notes safely, excluding `archive/` by default.
+- Checks missing/ambiguous note links, duplicate daily backlinks, and secret-looking content.
+- Supports English and Korean messages through config.
 
 ## Repository Layout
 
 ```text
 obsidian-agent-bridge/
-  cli/
-    obs_agent.py      # CLI entrypoint
-    config.py         # config loading
-    router.py         # route scoring and vault-derived hints
-    recorder.py       # history + daily writes
-    checker.py        # link and secret checks
-    vault.py          # safe vault filesystem access
+  .claude-plugin/plugin.json
+  bin/                  # npm command wrappers
+  cli/                  # CLI implementation
+  mcp_server/           # dependency-free stdio MCP server
+  scripts/              # setup and run helpers
   agents/
-    vault-curator.md
-  mcp_server/
-    server.py
-  examples/
-    claude_desktop_config.json
-    codex_config.toml
   skills/
-    obsidian-memory/SKILL.md
+  examples/
   tests/
-    test_core.py
-```
-
-## Quick Start
-
-```powershell
-python cli\obs_agent.py route --cwd C:\work\app --path src\auth\session.py --request "Fix stale login sessions" --json
-python cli\obs_agent.py read --path CODEX.md --json
-python cli\obs_agent.py search --query "session" --path-prefix projects --json
-python cli\obs_agent.py record --category engineering/backend --title "auth session fix" --summary "Fixed stale session cleanup." --dry-run --json
-python cli\obs_agent.py check --json
-```
-
-Default vault:
-
-```text
-~/Documents/Obsidian Vault
-```
-
-Override with `--vault`, `OBSIDIAN_VAULT_PATH`, `--config`, or
-`OBS_AGENT_CONFIG`.
-
-Write a local config:
-
-```powershell
-.\scripts\write-config.ps1 -Vault "$env:USERPROFILE\Documents\Obsidian Vault" -Language en
 ```
 
 ## Config
@@ -95,134 +108,35 @@ Example:
 }
 ```
 
-`language` supports `en` and `ko`. It localizes route reasons and validation
-errors. `--vault` wins over the config file. `historyTemplate` supports `{date}`,
-`{title}`, `{summary}`, and `{category}`.
+`language` supports `en` and `ko`. `--vault` wins over config. Routing also scans `projects/*/*/index.md` for category names, headings, and wikilinks.
 
-Routing also scans `projects/*/*/index.md`. Category path parts, index headings,
-and wikilink targets become route hints, so a vault can work without listing
-every category in config.
-
-## Language
-
-Set `"language": "en"` or `"language": "ko"` in config. English is the default.
-Korean mode localizes route reasons and validation errors while keeping JSON
-field names stable for agents.
-
-## Commands
-
-### `route`
-
-Suggest a category and minimal notes to read.
+## CLI
 
 ```powershell
-python cli\obs_agent.py route `
-  --cwd C:\work\app `
-  --path src\auth\session.py `
-  --request "Fix stale login sessions" `
-  --json
+obs-agent route --cwd C:\work\app --request "Fix stale login sessions" --json
+obs-agent read --path CODEX.md --json
+obs-agent search --query "session" --path-prefix projects --json
+obs-agent record --category engineering/backend --title "auth session fix" --summary "Fixed stale session cleanup." --dry-run --json
+obs-agent check --json
 ```
 
-Example output:
-
-```json
-{
-  "category": "projects/engineering/backend",
-  "confidence": 0.55,
-  "reason": "Matched session",
-  "read_set": ["CODEX.md", "projects/engineering/backend/index.md"]
-}
-```
-
-### `record`
-
-Create a history note and append a daily backlink.
+Without npm install, use:
 
 ```powershell
-python cli\obs_agent.py record `
-  --category engineering/backend `
-  --title "auth session fix" `
-  --summary "Fixed stale session cleanup." `
-  --dry-run `
-  --json
+python cli\obs_agent.py route --request "Fix stale login sessions" --json
 ```
 
-`--dry-run` previews `note_path`, `daily_link`, and `note_text` without writing.
+## MCP Tools
 
-### `read`
-
-Read one vault-relative note.
-
-```powershell
-python cli\obs_agent.py read --path CODEX.md --json
-```
-
-### `search`
-
-Search non-archive Markdown notes.
-
-```powershell
-python cli\obs_agent.py search `
-  --query "session" `
-  --path-prefix projects `
-  --limit 20 `
-  --json
-```
-
-### `check`
-
-Scan non-archive Markdown for vault hygiene issues.
-
-```powershell
-python cli\obs_agent.py check --json
-```
-
-Checks:
-
-- missing note links
-- ambiguous short wikilinks
-- relative Markdown links to notes
-- duplicate daily backlinks
-- secret-looking content
-
-## Agent Workflow
-
-Recommended agent flow:
-
-1. Run `route`.
-2. Read only the returned `read_set`.
-3. Do the user task.
-4. Run `record --dry-run`.
-5. Confirm the target category and note text.
-6. Run `record`.
-7. Optionally run `check`.
-
-Bundled agent/skill docs:
-
-- [`agents/vault-curator.md`](agents/vault-curator.md)
-- [`skills/obsidian-memory/SKILL.md`](skills/obsidian-memory/SKILL.md)
-
-## MCP Server
-
-Run the stdio MCP server:
+Run server:
 
 ```powershell
 python -m mcp_server.server
-```
-
-On Windows, this repo also includes a cwd-safe wrapper:
-
-```powershell
-powershell.exe -NoProfile -File D:\obsidian-agent-bridge\scripts\run-mcp.ps1
-```
-
-If installed as a package, use:
-
-```powershell
+# or
 obs-agent-mcp
 ```
 
-MCP tools:
+Tools:
 
 - `obs_route`
 - `obs_read`
@@ -230,46 +144,20 @@ MCP tools:
 - `obs_record`
 - `obs_check`
 
-Claude Desktop example:
+Recommended agent flow:
 
-```json
-{
-  "mcpServers": {
-    "obsidian-agent-bridge": {
-      "command": "python",
-      "args": ["-m", "mcp_server.server"],
-      "cwd": "D:\\obsidian-agent-bridge"
-    }
-  }
-}
-```
+1. Call `obs_route`.
+2. Read only returned `read_set` through `obs_read`.
+3. Do the user task.
+4. Preview with `obs_record` and `dry_run: true`.
+5. Record final work with `obs_record`.
+6. Optionally run `obs_check`.
 
-Codex config example:
-
-```toml
-[mcp_servers.obsidian-agent-bridge]
-command = "python"
-args = ["-m", "mcp_server.server"]
-cwd = "D:\\obsidian-agent-bridge"
-```
-
-Claude Code command:
-
-```powershell
-claude mcp add -s user obsidian-agent-bridge -- powershell.exe -NoProfile -File D:\obsidian-agent-bridge\scripts\run-mcp.ps1
-```
-
-See [`examples/`](examples/) for copyable config snippets.
-
-For Claude or Codex project instructions, copy the relevant parts from
-[`examples/AGENTS.md`](examples/AGENTS.md).
+See [`examples/`](examples/) for Claude/Codex config snippets and [`examples/AGENTS.md`](examples/AGENTS.md) for project instructions.
 
 ## Development
 
-Run tests:
-
 ```powershell
 python -m unittest discover -s tests
+python -m py_compile cli\*.py mcp_server\*.py
 ```
-
-GitHub Actions runs the same test command on push and pull request.

@@ -1,0 +1,30 @@
+{
+  "name": "obsidian-agent-bridge",
+  "description": "Local-first Obsidian memory bridge for Claude Code, Codex, and MCP-compatible coding agents.",
+  "version": "0.1.0",
+  "author": {
+    "name": "pinkpanther7929",
+    "url": "https://github.com/pinkpanther7929"
+  },
+  "homepage": "https://github.com/pinkpanther7929/obsidian-agent-bridge",
+  "repository": "https://github.com/pinkpanther7929/obsidian-agent-bridge",
+  "license": "MIT",
+  "keywords": [
+    "obsidian",
+    "mcp",
+    "memory",
+    "agent",
+    "claude-code",
+    "codex"
+  ],
+  "mcpServers": {
+    "obsidian-agent-bridge": {
+      "command": "powershell.exe",
+      "args": [
+        "-NoProfile",
+        "-File",
+        "${CLAUDE_PLUGIN_ROOT}\\scripts\\run-mcp.ps1"
+      ]
+    }
+  }
+}
