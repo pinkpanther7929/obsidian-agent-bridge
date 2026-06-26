@@ -3,9 +3,11 @@ from __future__ import annotations
 import tempfile
 import unittest
 import json
+import subprocess
 from pathlib import Path
 
 from cli.config import AppConfig
+from cli.auto_record import auto_record
 from cli.checker import check
 from cli.reader import read_note, search_notes
 from cli.recorder import record
@@ -52,6 +54,39 @@ class CoreTests(unittest.TestCase):
         self.assertTrue(vault.path(first.note_path).exists())
         self.assertTrue(first.daily_added)
         self.assertFalse(second.daily_added)
+
+    def test_auto_record_writes_git_work_once(self) -> None:
+        vault = self.make_vault()
+        repo_dir = vault.root / "work"
+        repo_dir.mkdir()
+        subprocess.run(["git", "init"], cwd=repo_dir, check=True, stdout=subprocess.DEVNULL)
+        changed = repo_dir / "agents" / "memory_tool.py"
+        changed.parent.mkdir()
+        changed.write_text("print('memory')\n", encoding="utf-8")
+
+        state = vault.root / "state.json"
+        first = auto_record(
+            cwd=repo_dir,
+            config_path=str(vault.root / "missing-config.json"),
+            vault_path=str(vault.root),
+            state_path=state,
+            session_root=vault.root / "missing-sessions",
+            event="turn-ended",
+            force=False,
+        )
+        second = auto_record(
+            cwd=repo_dir,
+            config_path=str(vault.root / "missing-config.json"),
+            vault_path=str(vault.root),
+            state_path=state,
+            session_root=vault.root / "missing-sessions",
+            event="turn-ended",
+            force=False,
+        )
+        self.assertEqual(first["status"], "recorded")
+        self.assertEqual(first["category"], "projects/ai/agents")
+        self.assertEqual(second["status"], "skipped")
+        self.assertEqual(second["reason"], "duplicate")
 
     def test_config_loads_custom_hints_and_daily_folder(self) -> None:
         vault = self.make_vault()

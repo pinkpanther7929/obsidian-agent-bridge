@@ -6,6 +6,7 @@ Before work:
 
 After meaningful work:
 - OAB auto-memory is on by default.
+- Codex notify hook should run `scripts/codex-notify.ps1`, which calls `cli/auto_record.py` at turn end.
 - Map `/oab status`, `/oab on`, `/oab off`, and `/oab set ...` to `obs_oab` or `obs-agent oab`.
 - Use a memory-recorder subagent for durable vault recording when subagents are available.
 - Call `obs_record` with `dryRun=true`.

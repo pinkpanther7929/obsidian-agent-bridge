@@ -17,6 +17,7 @@ vault.
 - Record meaningful completed work into category history.
 - Append daily notes only as short backlinks.
 - OAB auto-memory defaults to on.
+- Codex notify hook uses `scripts/codex-notify.ps1` to run `cli/auto_record.py` at turn end.
 - Treat `/oab status`, `/oab on`, `/oab off`, and `/oab set ...` as shorthand for the `oab` CLI command or `obs_oab` MCP tool.
 - When subagents are available, delegate durable vault recording to a memory-recorder subagent. That subagent should only route, read, and record vault memory.
 - Never write credentials, tokens, passwords, or secrets.
@@ -49,6 +50,7 @@ python cli/obs_agent.py oab status --json
 python cli/obs_agent.py oab on --json
 python cli/obs_agent.py oab off --json
 python cli/obs_agent.py oab set memoryRecorderAgent on --json
+python cli/auto_record.py --cwd <repo> --json
 ```
 
 When MCP is configured, prefer these tools:

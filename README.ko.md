@@ -47,6 +47,8 @@ cd D:\obsidian-agent-bridge
 등록 후 Codex를 재시작해야 합니다. 설치 스크립트는 `~/.codex/config.toml`에 아래 블록이 없으면 추가합니다:
 
 ```toml
+notify = ['powershell.exe', '-NoProfile', '-File', 'D:\obsidian-agent-bridge\scripts\codex-notify.ps1', 'turn-ended']
+
 [mcp_servers.obsidian_agent_bridge]
 command = 'powershell.exe'
 args = ['-NoProfile', '-File', 'D:\obsidian-agent-bridge\scripts\run-mcp.ps1']
@@ -66,6 +68,7 @@ obs-agent-mcp
 - 에이전트가 Vault 전체를 읽지 않도록 최소 `read_set`을 반환합니다.
 - 완료된 작업을 `projects/<project>/<category>/history/`에 기록합니다.
 - daily note에는 중복 없는 backlink 하나만 추가합니다.
+- Codex notify hook에서 git 변경을 감지해 turn 종료 시 자동 기록할 수 있습니다.
 - `archive/`를 기본 제외하고 Vault 노트를 읽고 검색합니다.
 - 누락/모호한 노트 링크, 중복 daily backlink, secret처럼 보이는 내용을 점검합니다.
 - config로 영어/한국어 메시지를 지원합니다.
@@ -125,6 +128,7 @@ obs-agent check --json
 obs-agent oab status --json
 obs-agent oab off --json
 obs-agent oab on --json
+python cli\auto_record.py --cwd D:\some-repo --json
 ```
 
 npm 설치 없이 쓸 때:

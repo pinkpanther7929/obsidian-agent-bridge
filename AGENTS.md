@@ -9,6 +9,7 @@ During work:
 
 After meaningful work:
 - OAB auto-memory is enabled by default. Use `obs_oab` or `obs-agent oab` only when the user asks to inspect/change it.
+- Codex notify hook should run `scripts/codex-notify.ps1`, which calls `cli/auto_record.py` at turn end.
 - If the user says `/oab status`, `/oab on`, `/oab off`, or `/oab set ...`, map it to `obs_oab` or `obs-agent oab`.
 - When subagents are available, use a memory-recorder subagent for durable vault recording. The main agent owns code; the memory-recorder owns route/read/record only.
 - Call `obs_record` with `dryRun=true`.

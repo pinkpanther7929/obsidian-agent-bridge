@@ -47,6 +47,8 @@ cd D:\obsidian-agent-bridge
 Restart Codex after registration. The installer appends this block to `~/.codex/config.toml` if missing:
 
 ```toml
+notify = ['powershell.exe', '-NoProfile', '-File', 'D:\obsidian-agent-bridge\scripts\codex-notify.ps1', 'turn-ended']
+
 [mcp_servers.obsidian_agent_bridge]
 command = 'powershell.exe'
 args = ['-NoProfile', '-File', 'D:\obsidian-agent-bridge\scripts\run-mcp.ps1']
@@ -66,6 +68,7 @@ obs-agent-mcp
 - Returns a minimal `read_set` so agents do not load the whole vault.
 - Records completed work into `projects/<project>/<category>/history/`.
 - Appends one deduplicated daily backlink.
+- Auto-records git work at Codex turn end through the notify hook.
 - Reads/searches vault notes safely, excluding `archive/` by default.
 - Checks missing/ambiguous note links, duplicate daily backlinks, and secret-looking content.
 - Supports English and Korean messages through config.
@@ -125,6 +128,7 @@ obs-agent check --json
 obs-agent oab status --json
 obs-agent oab off --json
 obs-agent oab on --json
+python cli\auto_record.py --cwd D:\some-repo --json
 ```
 
 Without npm install, use:
