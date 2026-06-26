@@ -86,7 +86,8 @@ python cli\obs_agent.py record `
 
 Scans non-archive Markdown for:
 
-- broken or ambiguous wikilinks
+- missing or ambiguous wikilinks
+- relative Markdown links to notes
 - duplicated daily backlinks
 - secret-looking content
 
