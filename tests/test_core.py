@@ -4,9 +4,9 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from recorder import record
-from router import route
-from vault import Vault
+from cli.recorder import record
+from cli.router import route
+from cli.vault import Vault
 
 
 class CoreTests(unittest.TestCase):

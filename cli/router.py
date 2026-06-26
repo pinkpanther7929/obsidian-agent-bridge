@@ -4,7 +4,10 @@ import re
 from dataclasses import dataclass
 from pathlib import Path
 
-from vault import Vault
+try:
+    from .vault import Vault
+except ImportError:
+    from vault import Vault
 
 CATEGORY_HINTS: dict[str, list[str]] = {
     "projects/engineering/backend": ["backend", "api", "auth", "database", "session"],

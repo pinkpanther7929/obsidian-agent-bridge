@@ -3,8 +3,12 @@ from __future__ import annotations
 import datetime as dt
 from dataclasses import dataclass
 
-from router import slugify
-from vault import Vault, VaultError, assert_no_secrets
+try:
+    from .router import slugify
+    from .vault import Vault, VaultError, assert_no_secrets
+except ImportError:
+    from router import slugify
+    from vault import Vault, VaultError, assert_no_secrets
 
 
 @dataclass(frozen=True)

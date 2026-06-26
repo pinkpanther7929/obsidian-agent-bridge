@@ -5,10 +5,16 @@ import json
 import sys
 from dataclasses import asdict
 
-from checker import check
-from recorder import record
-from router import route
-from vault import Vault, VaultError
+if __package__ in {None, ""}:
+    from checker import check
+    from recorder import record
+    from router import route
+    from vault import Vault, VaultError
+else:
+    from .checker import check
+    from .recorder import record
+    from .router import route
+    from .vault import Vault, VaultError
 
 if sys.platform == "win32":
     sys.stdout.reconfigure(encoding="utf-8")

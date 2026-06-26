@@ -14,7 +14,7 @@ keywords = ["obsidian", "agent", "codex", "claude", "memory", "mcp"]
 dependencies = []
 
 [project.scripts]
-obs-agent = "obs_agent:main"
+obs-agent = "cli.obs_agent:main"
 
 [tool.hatch.build.targets.wheel]
-py-modules = ["obs_agent", "checker", "recorder", "router", "vault"]
+packages = ["cli"]
