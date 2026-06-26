@@ -99,3 +99,6 @@ python cli\obs_agent.py check --json
 
 The first bundled agent spec is [`agents/vault-curator.md`](agents/vault-curator.md).
 It defines policy and delegates filesystem changes to this CLI.
+
+The first reusable skill is
+[`skills/obsidian-memory/SKILL.md`](skills/obsidian-memory/SKILL.md).
