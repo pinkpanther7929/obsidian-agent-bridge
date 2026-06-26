@@ -48,6 +48,10 @@ exists. Override that with `--config` or `OBS_AGENT_CONFIG`.
 
 `--vault` wins over the config file.
 
+Routing also scans `projects/*/*/index.md` in the vault. Category path parts,
+index headings, and wikilink targets become route hints, so a vault can work
+without listing every category in config.
+
 ## Commands
 
 ### `route`

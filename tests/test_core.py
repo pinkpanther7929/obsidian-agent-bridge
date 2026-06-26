@@ -7,7 +7,7 @@ from pathlib import Path
 
 from cli.config import AppConfig
 from cli.recorder import record
-from cli.router import route
+from cli.router import build_category_hints, route
 from cli.vault import Vault
 
 
@@ -74,6 +74,16 @@ class CoreTests(unittest.TestCase):
         )
         self.assertEqual(routed.category, "projects/ai/agents")
         self.assertEqual(result.daily_path, "journal/2026-06-26.md")
+
+    def test_route_learns_categories_from_vault_indexes(self) -> None:
+        vault = self.make_vault()
+        category = vault.root / "projects" / "research" / "papers"
+        category.mkdir(parents=True)
+        (category / "index.md").write_text("# Papers\n\n- [[retrieval-notes]]\n", encoding="utf-8")
+        hints = build_category_hints(vault, seed={})
+        result = route(vault, request="Summarize retrieval notes", category_hints={})
+        self.assertIn("projects/research/papers", hints)
+        self.assertEqual(result.category, "projects/research/papers")
 
 
 if __name__ == "__main__":
