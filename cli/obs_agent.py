@@ -7,11 +7,13 @@ from dataclasses import asdict
 
 if __package__ in {None, ""}:
     from checker import check
+    from config import AppConfig
     from recorder import record
     from router import route
     from vault import Vault, VaultError
 else:
     from .checker import check
+    from .config import AppConfig
     from .recorder import record
     from .router import route
     from .vault import Vault, VaultError
@@ -33,20 +35,23 @@ def emit(data: object, as_json: bool) -> None:
 
 
 def cmd_route(args: argparse.Namespace) -> int:
-    vault = Vault.open(args.vault)
-    result = route(vault, cwd=args.cwd, paths=args.path or [], request=args.request)
+    config = AppConfig.load(args.config)
+    vault = Vault.open(args.vault or config.vault)
+    result = route(vault, cwd=args.cwd, paths=args.path or [], request=args.request, category_hints=config.category_hints)
     emit(asdict(result), args.json)
     return 0
 
 
 def cmd_record(args: argparse.Namespace) -> int:
-    vault = Vault.open(args.vault)
+    config = AppConfig.load(args.config)
+    vault = Vault.open(args.vault or config.vault)
     result = record(
         vault,
         category=args.category,
         title=args.title,
         summary=args.summary,
         date=args.date,
+        daily_folder=config.daily_folder,
         dry_run=args.dry_run,
     )
     emit(asdict(result), args.json)
@@ -54,7 +59,8 @@ def cmd_record(args: argparse.Namespace) -> int:
 
 
 def cmd_check(args: argparse.Namespace) -> int:
-    vault = Vault.open(args.vault)
+    config = AppConfig.load(args.config)
+    vault = Vault.open(args.vault or config.vault)
     result = check(vault)
     emit(result, args.json)
     return 1 if result["error_count"] else 0
@@ -63,6 +69,7 @@ def cmd_check(args: argparse.Namespace) -> int:
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Obsidian memory bridge for coding agents.")
     parser.add_argument("--vault", help="Vault root. Defaults to OBSIDIAN_VAULT_PATH or the built-in user vault.")
+    parser.add_argument("--config", help="Config JSON path. Defaults to OBS_AGENT_CONFIG or ~/.obsidian-agent-bridge/config.json.")
     sub = parser.add_subparsers(dest="command", required=True)
 
     route_cmd = sub.add_parser("route", help="Suggest category and minimal notes for a task.")
@@ -92,7 +99,7 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     try:
         return args.func(args)
-    except VaultError as exc:
+    except (VaultError, ValueError) as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2
 

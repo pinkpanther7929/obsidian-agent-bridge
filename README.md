@@ -28,7 +28,25 @@ Default vault:
 ~/Documents/Obsidian Vault
 ```
 
-Override with `--vault` or `OBSIDIAN_VAULT_PATH`.
+Override with `--vault`, `OBSIDIAN_VAULT_PATH`, or a config file.
+
+## Config
+
+By default, the CLI reads `~/.obsidian-agent-bridge/config.json` when it
+exists. Override that with `--config` or `OBS_AGENT_CONFIG`.
+
+```json
+{
+  "vault": "~/Documents/Obsidian Vault",
+  "dailyFolder": "daily",
+  "categoryHints": {
+    "projects/engineering/backend": ["backend", "api", "auth", "database"],
+    "projects/ai/agents": ["agent", "mcp", "tool", "memory"]
+  }
+}
+```
+
+`--vault` wins over the config file.
 
 ## Commands
 

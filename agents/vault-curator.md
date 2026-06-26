@@ -29,4 +29,6 @@ python cli/obs_agent.py record --category <project/category> --title <title> --s
 python cli/obs_agent.py check --json
 ```
 
+Use `--config <path>` when the vault has project-specific category hints.
+
 Do not edit vault Markdown directly unless the CLI cannot handle the task.

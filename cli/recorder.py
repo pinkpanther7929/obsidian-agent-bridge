@@ -36,6 +36,7 @@ def record(
     title: str,
     summary: str,
     date: str | None = None,
+    daily_folder: str = "daily",
     dry_run: bool = False,
 ) -> RecordResult:
     day = date or dt.date.today().isoformat()
@@ -46,7 +47,7 @@ def record(
 
     slug = slugify(title)
     note_rel = f"{category_path}/history/{day}-{slug}.md"
-    daily_rel = f"daily/{day}.md"
+    daily_rel = f"{daily_folder.strip().strip('/')}/{day}.md"
     link = f"- [[{note_rel[:-3]}|{category_path.replace('projects/', '')}: {title}]]"
     text = f"# {day} {title}\n\n{summary.strip()}\n"
     assert_no_secrets(text)

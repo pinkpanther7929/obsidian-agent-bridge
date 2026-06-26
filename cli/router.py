@@ -5,18 +5,11 @@ from dataclasses import dataclass
 from pathlib import Path
 
 try:
+    from .config import DEFAULT_CATEGORY_HINTS
     from .vault import Vault
 except ImportError:
+    from config import DEFAULT_CATEGORY_HINTS
     from vault import Vault
-
-CATEGORY_HINTS: dict[str, list[str]] = {
-    "projects/engineering/backend": ["backend", "api", "auth", "database", "session"],
-    "projects/engineering/frontend": ["frontend", "ui", "web", "react", "css"],
-    "projects/engineering/build": ["build", "ci", "pipeline", "test", "failure"],
-    "projects/operations/deploy": ["deploy", "release", "kubernetes", "docker", "argocd"],
-    "projects/ai/agents": ["agent", "codex", "claude", "mcp", "tool", "memory"],
-    "projects/ai/local-models": ["local llm", "llm", "model", "inference", "token"],
-}
 
 
 @dataclass(frozen=True)
@@ -32,7 +25,7 @@ def _text_blob(cwd: str | None, paths: list[str], request: str | None) -> str:
     return " ".join(parts).replace("\\", "/").casefold()
 
 
-def _score_category(category: str, blob: str) -> tuple[int, list[str]]:
+def _score_category(category: str, hints: list[str], blob: str) -> tuple[int, list[str]]:
     score = 0
     matches: list[str] = []
     category_tokens = Path(category).parts
@@ -40,22 +33,30 @@ def _score_category(category: str, blob: str) -> tuple[int, list[str]]:
         if token.casefold() in blob:
             score += 2
             matches.append(token)
-    for hint in CATEGORY_HINTS.get(category, []):
+    for hint in hints:
         if hint.casefold() in blob:
             score += 4 if " " not in hint else 5
             matches.append(hint)
     return score, matches
 
 
-def route(vault: Vault, *, cwd: str | None = None, paths: list[str] | None = None, request: str | None = None) -> RouteResult:
+def route(
+    vault: Vault,
+    *,
+    cwd: str | None = None,
+    paths: list[str] | None = None,
+    request: str | None = None,
+    category_hints: dict[str, list[str]] | None = None,
+) -> RouteResult:
     paths = paths or []
+    hints_by_category = category_hints or DEFAULT_CATEGORY_HINTS
     blob = _text_blob(cwd, paths, request)
     best_category = "projects"
     best_score = 0
     best_matches: list[str] = []
 
-    for category in CATEGORY_HINTS:
-        score, matches = _score_category(category, blob)
+    for category, hints in hints_by_category.items():
+        score, matches = _score_category(category, hints, blob)
         if score > best_score:
             best_category = category
             best_score = score
