@@ -19,12 +19,14 @@
   ],
   "mcpServers": {
     "obsidian-agent-bridge": {
-      "command": "powershell.exe",
+      "command": "python",
       "args": [
-        "-NoProfile",
-        "-File",
-        "${CLAUDE_PLUGIN_ROOT}\\scripts\\run-mcp.ps1"
-      ]
+        "-m",
+        "mcp_server.server"
+      ],
+      "env": {
+        "PYTHONPATH": "${CLAUDE_PLUGIN_ROOT}"
+      }
     }
   }
 }

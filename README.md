@@ -22,7 +22,7 @@ cd D:\obsidian-agent-bridge
 This registers the MCP server in Claude Code:
 
 ```powershell
-claude mcp add -s user obsidian-agent-bridge -- powershell.exe -NoProfile -File D:\obsidian-agent-bridge\scripts\run-mcp.ps1
+claude mcp add -s user obsidian-agent-bridge -e PYTHONPATH=D:\obsidian-agent-bridge -- python -m mcp_server.server
 ```
 
 Plugin-ready metadata is included at `.claude-plugin/plugin.json`, so this repo can also be used as a Claude Code plugin source when added to a Claude plugin marketplace/workflow.

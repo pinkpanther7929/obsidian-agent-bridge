@@ -12,7 +12,7 @@ from cli.recorder import record
 from cli.router import route
 from cli.vault import Vault, VaultError
 
-PROTOCOL_VERSION = "2024-11-05"
+PROTOCOL_VERSION = "2025-06-18"
 
 
 def _json_default(value: object) -> object:
@@ -193,8 +193,9 @@ def handle(request: dict[str, Any]) -> dict[str, Any] | None:
         return None
     try:
         if method == "initialize":
+            params = request.get("params") or {}
             result = {
-                "protocolVersion": PROTOCOL_VERSION,
+                "protocolVersion": params.get("protocolVersion") or PROTOCOL_VERSION,
                 "capabilities": {"tools": {}},
                 "serverInfo": {"name": "obsidian-agent-bridge", "version": "0.1.0"},
             }
@@ -229,8 +230,14 @@ def main() -> int:
         except json.JSONDecodeError as exc:
             response = {"jsonrpc": "2.0", "id": None, "error": {"code": -32700, "message": str(exc)}}
         else:
-            response = handle(request)
-        if response is not None:
+            if isinstance(request, list):
+                responses = [handle(item) for item in request if isinstance(item, dict)]
+                response = [item for item in responses if item is not None]
+            elif isinstance(request, dict):
+                response = handle(request)
+            else:
+                response = {"jsonrpc": "2.0", "id": None, "error": {"code": -32600, "message": "Invalid request"}}
+        if response:
             print(json.dumps(response, ensure_ascii=False), flush=True)
     return 0
 
