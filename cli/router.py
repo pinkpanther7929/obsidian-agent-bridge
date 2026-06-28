@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+import time
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable
@@ -15,6 +16,8 @@ except ImportError:
     from vault import Vault
 
 STOPWORDS = {"current", "history", "index", "issue", "issues", "note", "notes", "project", "projects", "task", "tasks"}
+HINT_CACHE_TTL_SECONDS = 30.0
+_HINT_CACHE: dict[tuple[str, tuple[tuple[str, tuple[str, ...]], ...]], tuple[float, dict[str, list[str]]]] = {}
 
 
 @dataclass(frozen=True)
@@ -42,13 +45,18 @@ def _index_hints(vault: Vault, category: str) -> list[str]:
     index = vault.path(f"{category}/index.md")
     if not index.exists():
         return []
-    text = index.read_text(encoding="utf-8", errors="replace")
     hints: list[str] = []
-    for line in text.splitlines()[:40]:
-        if line.startswith("#"):
-            hints.extend(_words(line.lstrip("#").strip()))
-        for target in re.findall(r"\[\[([^\]|#]+)", line):
-            hints.extend(_words(Path(target).name))
+    try:
+        with index.open("r", encoding="utf-8", errors="replace") as handle:
+            for line_no, line in enumerate(handle):
+                if line_no >= 40:
+                    break
+                if line.startswith("#"):
+                    hints.extend(_words(line.lstrip("#").strip()))
+                for target in re.findall(r"\[\[([^\]|#]+)", line):
+                    hints.extend(_words(Path(target).name))
+    except OSError:
+        return []
     return hints
 
 
@@ -66,13 +74,29 @@ def _project_categories(vault: Vault) -> Iterable[str]:
     return categories
 
 
+def _seed_key(seed: dict[str, list[str]]) -> tuple[tuple[str, tuple[str, ...]], ...]:
+    return tuple(sorted((category, tuple(hints)) for category, hints in seed.items()))
+
+
+def _copy_hints(hints_by_category: dict[str, list[str]]) -> dict[str, list[str]]:
+    return {category: list(hints) for category, hints in hints_by_category.items()}
+
+
 def build_category_hints(vault: Vault, seed: dict[str, list[str]] | None = None) -> dict[str, list[str]]:
-    hints_by_category: dict[str, list[str]] = {key: list(value) for key, value in (seed or {}).items()}
+    seed = seed or {}
+    cache_key = (str(vault.root), _seed_key(seed))
+    cached = _HINT_CACHE.get(cache_key)
+    now = time.monotonic()
+    if cached and now - cached[0] < HINT_CACHE_TTL_SECONDS:
+        return _copy_hints(cached[1])
+
+    hints_by_category: dict[str, list[str]] = {key: list(value) for key, value in seed.items()}
     for category in _project_categories(vault):
         hints = hints_by_category.setdefault(category, [])
         hints.extend(Path(category).parts)
         hints.extend(_index_hints(vault, category))
         hints_by_category[category] = sorted(set(hint for hint in hints if hint))
+    _HINT_CACHE[cache_key] = (now, _copy_hints(hints_by_category))
     return hints_by_category
 
 

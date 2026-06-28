@@ -4,7 +4,7 @@ const { spawnSync } = require("node:child_process");
 const path = require("node:path");
 
 const root = path.resolve(__dirname, "..");
-const result = spawnSync("python", ["-m", "mcp_server.server"], {
+const result = spawnSync("python", ["-X", "utf8", "-m", "mcp_server.server"], {
   cwd: root,
   stdio: "inherit",
   windowsHide: true

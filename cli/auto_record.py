@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import datetime as dt
 import hashlib
+import heapq
 import json
 import os
 import subprocess
@@ -113,23 +114,52 @@ def untracked_signature(repo: Path, untracked: str) -> str:
     return "\n".join(sorted(lines))
 
 
+def _mtime(path: Path) -> float:
+    try:
+        return path.stat().st_mtime
+    except OSError:
+        return 0.0
+
+
+def _head_text(path: Path, line_count: int = 5) -> str:
+    lines: list[str] = []
+    try:
+        with path.open("r", encoding="utf-8", errors="replace") as handle:
+            for _ in range(line_count):
+                line = handle.readline()
+                if not line:
+                    break
+                lines.append(line)
+    except OSError:
+        return ""
+    return "".join(lines)
+
+
+def _tail_lines(path: Path, max_bytes: int = 256 * 1024) -> list[str]:
+    try:
+        size = path.stat().st_size
+        with path.open("rb") as handle:
+            handle.seek(max(0, size - max_bytes))
+            data = handle.read()
+    except OSError:
+        return []
+    return data.decode("utf-8", errors="replace").splitlines()
+
+
 def latest_session_prompt(session_root: Path, cwd: Path, limit: int = 180) -> str:
     if not session_root.exists():
         return ""
     try:
-        candidates = sorted(session_root.rglob("*.jsonl"), key=lambda p: p.stat().st_mtime, reverse=True)[:20]
+        candidates = heapq.nlargest(20, session_root.rglob("*.jsonl"), key=_mtime)
     except Exception:
         return ""
 
     cwd_text = str(cwd).replace("\\", "\\\\")
     for path in candidates:
-        try:
-            lines = path.read_text(encoding="utf-8", errors="replace").splitlines()
-        except Exception:
+        head = _head_text(path)
+        if head and cwd_text not in head:
             continue
-        if lines and cwd_text not in "\n".join(lines[:5]):
-            continue
-        for line in reversed(lines[-250:]):
+        for line in reversed(_tail_lines(path)[-250:]):
             try:
                 event = json.loads(line)
             except Exception:

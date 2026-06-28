@@ -1,5 +1,9 @@
+[CmdletBinding()]
 param(
-  [Parameter(ValueFromRemainingArguments = $true)]
+  [Parameter(ValueFromPipeline = $true)]
+  [AllowEmptyString()]
+  [string]$PipedInput,
+  [Parameter(ValueFromRemainingArguments = $true, Position = 0)]
   [string[]]$RemainingArgs
 )
 
@@ -10,7 +14,7 @@ $AutoRecorder = Join-Path $RepoPath "cli\auto_record.py"
 $LogDir = Join-Path $HOME ".obsidian-agent-bridge"
 $LogPath = Join-Path $LogDir "codex-auto-record.log"
 $OriginalNotify = "C:\Users\hsublee\AppData\Local\OpenAI\Codex\runtimes\cua_node\1b23c930bdf84ed6\bin\node_modules\@oai\sky\bin\windows\codex-computer-use.exe"
-$StdinPayload = [Console]::In.ReadToEnd()
+$StdinPayload = if ([string]::IsNullOrEmpty($PipedInput)) { [Console]::In.ReadToEnd() } else { $PipedInput }
 
 if (-not (Test-Path -LiteralPath $LogDir)) {
   New-Item -ItemType Directory -Path $LogDir -Force | Out-Null
@@ -31,7 +35,23 @@ try {
       Write-OabLog "native notify skipped: missing stdin payload"
     }
     else {
-      $StdinPayload | & $OriginalNotify @RemainingArgs
+      $process = [System.Diagnostics.Process]::new()
+      $process.StartInfo.FileName = $OriginalNotify
+      foreach ($arg in $RemainingArgs) {
+        [void]$process.StartInfo.ArgumentList.Add($arg)
+      }
+      $process.StartInfo.RedirectStandardInput = $true
+      $process.StartInfo.RedirectStandardOutput = $true
+      $process.StartInfo.RedirectStandardError = $true
+      $process.StartInfo.UseShellExecute = $false
+      $process.StartInfo.CreateNoWindow = $true
+      [void]$process.Start()
+      $process.StandardInput.Write($StdinPayload)
+      $process.StandardInput.Close()
+      if (-not $process.WaitForExit(750)) {
+        $process.Kill()
+        Write-OabLog "native notify timed out after 750ms"
+      }
     }
   }
 }

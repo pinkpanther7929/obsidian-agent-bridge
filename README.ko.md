@@ -51,7 +51,8 @@ notify = ['powershell.exe', '-NoProfile', '-File', 'D:\obsidian-agent-bridge\scr
 
 [mcp_servers.obsidian_agent_bridge]
 command = 'python'
-args = ['-m', 'mcp_server.server']
+args = ['-X', 'utf8', '-m', 'mcp_server.server']
+cwd = 'D:\obsidian-agent-bridge'
 startup_timeout_sec = 30
 
 [mcp_servers.obsidian_agent_bridge.env]

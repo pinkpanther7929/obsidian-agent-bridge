@@ -3,11 +3,12 @@ from __future__ import annotations
 import tempfile
 import unittest
 import json
+import shutil
 import subprocess
 from pathlib import Path
 
 from cli.config import AppConfig
-from cli.auto_record import auto_record
+from cli.auto_record import auto_record, latest_session_prompt
 from cli.checker import check
 from cli.reader import read_note, search_notes
 from cli.recorder import record
@@ -88,6 +89,19 @@ class CoreTests(unittest.TestCase):
         self.assertEqual(second["status"], "skipped")
         self.assertEqual(second["reason"], "duplicate")
 
+    def test_latest_session_prompt_reads_tail_of_large_session(self) -> None:
+        vault = self.make_vault()
+        repo_dir = vault.root / "work"
+        repo_dir.mkdir()
+        session_root = vault.root / "sessions"
+        session_root.mkdir()
+        session = session_root / "session.jsonl"
+        filler = json.dumps({"cwd": str(repo_dir), "padding": "x" * 300000})
+        prompt = json.dumps({"type": "message", "payload": {"role": "user", "content": "Fix slow route"}})
+        session.write_text(filler + "\n" + prompt + "\n", encoding="utf-8")
+
+        self.assertEqual(latest_session_prompt(session_root, repo_dir), "Fix slow route")
+
     def test_config_loads_custom_hints_and_daily_folder(self) -> None:
         vault = self.make_vault()
         config_path = vault.root / "config.json"
@@ -164,6 +178,13 @@ class CoreTests(unittest.TestCase):
         self.assertIn("projects/research/papers", hints)
         self.assertEqual(result.category, "projects/research/papers")
 
+    def test_category_hint_cache_returns_isolated_copies(self) -> None:
+        vault = self.make_vault()
+        first = build_category_hints(vault, seed={})
+        first["projects/ai/agents"].append("mutated")
+        second = build_category_hints(vault, seed={})
+        self.assertNotIn("mutated", second["projects/ai/agents"])
+
     def test_check_resolves_relative_and_markdown_links(self) -> None:
         vault = self.make_vault()
         docs = vault.root / "projects" / "ai" / "agents"
@@ -236,6 +257,39 @@ class CoreTests(unittest.TestCase):
         self.assertIsNotNone(called)
         content = called["result"]["content"][0]["text"]
         self.assertIn('"autoRecord": false', content)
+
+    def test_install_codex_repairs_duplicate_oab_notify(self) -> None:
+        powershell = shutil.which("powershell.exe") or shutil.which("pwsh")
+        if not powershell:
+            self.skipTest("PowerShell not available")
+        vault = self.make_vault()
+        config_path = vault.root / "codex.toml"
+        repo = Path.cwd()
+        notify = repo / "scripts" / "codex-notify.ps1"
+        config_path.write_text(
+            "\n".join(
+                [
+                    f"notify = ['powershell.exe', '-NoProfile', '-File', '{notify}', 'turn-ended']",
+                    "model = 'gpt-5.5'",
+                    "notify = ['codex-computer-use.exe', 'turn-ended', '--previous-notify', 'codex-notify.ps1']",
+                ]
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+
+        subprocess.run(
+            [powershell, "-NoProfile", "-File", "scripts/install-codex.ps1", "-ConfigPath", str(config_path)],
+            cwd=repo,
+            check=True,
+            stdout=subprocess.DEVNULL,
+        )
+
+        text = config_path.read_text(encoding="utf-8-sig")
+        self.assertEqual(text.count("notify ="), 1)
+        self.assertNotIn("--previous-notify", text)
+        self.assertIn("args = ['-X', 'utf8', '-m', 'mcp_server.server']", text)
+        self.assertIn(f"cwd = '{repo}'", text)
 
 
 if __name__ == "__main__":
