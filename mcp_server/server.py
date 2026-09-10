@@ -9,7 +9,7 @@ from cli.checker import check
 from cli.config import AppConfig
 from cli.oab import set_auto_record, set_option, status
 from cli.reader import read_note, search_notes
-from cli.recorder import record
+from cli.recorder import record, record_decision
 from cli.router import route
 from cli.vault import Vault, VaultError
 
@@ -88,6 +88,26 @@ def tool_record(args: dict[str, Any]) -> dict[str, Any]:
     return _text(asdict(result))
 
 
+def tool_decision(args: dict[str, Any]) -> dict[str, Any]:
+    config, vault = _load_vault(args)
+    fields = args.get("fields")
+    if not isinstance(fields, dict) or not all(isinstance(v, str) for v in fields.values()):
+        raise ValueError("Missing required argument: fields (object of string values)")
+    result = record_decision(
+        vault,
+        category=_required(args, "category"),
+        kind=_required(args, "kind"),
+        title=_required(args, "title"),
+        fields=fields,
+        status=args.get("status") or "accepted",
+        date=args.get("date"),
+        daily_folder=config.daily_folder,
+        language=config.language,
+        dry_run=bool(args.get("dryRun")),
+    )
+    return _text(asdict(result))
+
+
 def tool_check(args: dict[str, Any]) -> dict[str, Any]:
     _, vault = _load_vault(args)
     return _text(check(vault))
@@ -124,6 +144,7 @@ TOOLS: dict[str, Callable[[dict[str, Any]], dict[str, Any]]] = {
     "obs_read": tool_read,
     "obs_search": tool_search,
     "obs_record": tool_record,
+    "obs_decision": tool_decision,
     "obs_check": tool_check,
     "obs_oab": tool_oab,
 }
@@ -191,6 +212,30 @@ TOOL_DEFINITIONS = [
                 "vault": {"type": "string"},
             },
             "required": ["category", "title", "summary"],
+        },
+    },
+    {
+        "name": "obs_decision",
+        "description": (
+            "Record a decision document under {category}/decisions/ and link it from the category index and daily note. "
+            "kind=adr: fields decision, why, enforce (required), scope, examples, related. "
+            "kind=prd: fields why, problem, goal (required), journey, related. "
+            "Use for architectural rules, conventions, and feature requirements — not for work history (use obs_record)."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "category": {"type": "string"},
+                "kind": {"type": "string", "enum": ["adr", "prd"]},
+                "title": {"type": "string"},
+                "fields": {"type": "object", "additionalProperties": {"type": "string"}},
+                "status": {"type": "string", "enum": ["proposed", "accepted", "deprecated", "superseded"]},
+                "date": {"type": "string"},
+                "dryRun": {"type": "boolean"},
+                "config": {"type": "string"},
+                "vault": {"type": "string"},
+            },
+            "required": ["category", "kind", "title", "fields"],
         },
     },
     {

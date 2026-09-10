@@ -11,7 +11,7 @@ from cli.config import AppConfig
 from cli.auto_record import auto_record, latest_session_prompt
 from cli.checker import check
 from cli.reader import read_note, search_notes
-from cli.recorder import record
+from cli.recorder import record, record_decision
 from cli.router import build_category_hints, route
 from cli.vault import Vault
 from mcp_server.server import handle
@@ -55,6 +55,32 @@ class CoreTests(unittest.TestCase):
         self.assertTrue(vault.path(first.note_path).exists())
         self.assertTrue(first.daily_added)
         self.assertFalse(second.daily_added)
+
+    def test_decision_writes_adr_and_links_index_once(self) -> None:
+        vault = self.make_vault()
+        fields = {
+            "decision": "Matcher must not outlive a step.",
+            "why": "CPS serializes locals at every step.",
+            "enforce": "Groovy lint rule in CI.",
+            "scope": "jenkins/jenkinsfiles/**",
+        }
+        first = record_decision(vault, category="ai/agents", kind="adr", title="no matcher across steps", fields=fields, date="2026-09-10")
+        second = record_decision(vault, category="ai/agents", kind="adr", title="no matcher across steps", fields=fields, date="2026-09-10")
+        text = vault.path(first.note_path).read_text(encoding="utf-8")
+        self.assertEqual(first.note_path, "projects/ai/agents/decisions/2026-09-10-adr-no-matcher-across-steps.md")
+        self.assertIn("type: adr", text)
+        self.assertIn("## How to enforce", text)
+        self.assertNotIn("## Examples", text)
+        self.assertTrue(first.index_added and first.daily_added)
+        self.assertFalse(second.index_added or second.daily_added)
+        self.assertIn("ADR: no matcher across steps", vault.path("projects/ai/agents/index.md").read_text(encoding="utf-8"))
+
+    def test_decision_rejects_missing_or_unknown_fields(self) -> None:
+        vault = self.make_vault()
+        with self.assertRaisesRegex(Exception, "Missing required adr"):
+            record_decision(vault, category="ai/agents", kind="adr", title="x", fields={"decision": "d"}, dry_run=True)
+        with self.assertRaisesRegex(Exception, "Unknown prd field"):
+            record_decision(vault, category="ai/agents", kind="prd", title="x", fields={"why": "w", "problem": "p", "goal": "g", "enforce": "e"}, dry_run=True)
 
     def test_auto_record_writes_git_work_once(self) -> None:
         vault = self.make_vault()

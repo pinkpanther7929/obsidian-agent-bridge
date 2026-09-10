@@ -15,6 +15,7 @@ After meaningful work:
 - Call `obs_record` with `dryRun=true`.
 - Verify the category, daily link, and note text.
 - Call `obs_record` with `dryRun=false` only after the target is correct.
+- When the work produced a rule that must keep holding (a convention, a "never/always", a tool or path choice with a non-obvious reason), also call `obs_decision` with `kind=adr` and fields `decision`, `why`, `enforce`, `scope`, `examples`. For a new feature's requirements use `kind=prd` with `why`, `problem`, `goal`, `journey`. History goes to `obs_record`; rules go to `obs_decision`.
 
 Health check:
 - Use `obs_check` when link quality or secret-like content matters.

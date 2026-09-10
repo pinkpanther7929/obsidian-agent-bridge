@@ -10,7 +10,7 @@ if __package__ in {None, ""}:
     from config import AppConfig
     from oab import set_auto_record, set_option, status
     from reader import read_note, search_notes
-    from recorder import record
+    from recorder import record, record_decision
     from router import route
     from vault import Vault, VaultError
 else:
@@ -18,7 +18,7 @@ else:
     from .config import AppConfig
     from .oab import set_auto_record, set_option, status
     from .reader import read_note, search_notes
-    from .recorder import record
+    from .recorder import record, record_decision
     from .router import route
     from .vault import Vault, VaultError
 
@@ -64,6 +64,31 @@ def cmd_record(args: argparse.Namespace) -> int:
         date=args.date,
         daily_folder=config.daily_folder,
         history_template=config.history_template,
+        language=config.language,
+        dry_run=args.dry_run,
+    )
+    emit(asdict(result), args.json)
+    return 0
+
+
+def cmd_decision(args: argparse.Namespace) -> int:
+    config = AppConfig.load(args.config)
+    vault = Vault.open(args.vault or config.vault)
+    fields = {}
+    for item in args.field or []:
+        name, sep, value = item.partition("=")
+        if not sep:
+            raise ValueError(f"--field must look like name=value: {item}")
+        fields[name.strip()] = value
+    result = record_decision(
+        vault,
+        category=args.category,
+        kind=args.kind,
+        title=args.title,
+        fields=fields,
+        status=args.status,
+        date=args.date,
+        daily_folder=config.daily_folder,
         language=config.language,
         dry_run=args.dry_run,
     )
@@ -147,6 +172,21 @@ def build_parser() -> argparse.ArgumentParser:
     record_cmd.add_argument("--dry-run", action="store_true")
     record_cmd.add_argument("--json", action="store_true")
     record_cmd.set_defaults(func=cmd_record)
+
+    decision_cmd = sub.add_parser("decision", help="Record an ADR/PRD under {category}/decisions and link it from the index.")
+    decision_cmd.add_argument("--category", required=True)
+    decision_cmd.add_argument("--kind", required=True, choices=["adr", "prd"])
+    decision_cmd.add_argument("--title", required=True)
+    decision_cmd.add_argument(
+        "--field",
+        action="append",
+        help="name=value. adr: decision, why, enforce, scope, examples, related. prd: why, problem, goal, journey, related.",
+    )
+    decision_cmd.add_argument("--status", default="accepted", choices=["proposed", "accepted", "deprecated", "superseded"])
+    decision_cmd.add_argument("--date")
+    decision_cmd.add_argument("--dry-run", action="store_true")
+    decision_cmd.add_argument("--json", action="store_true")
+    decision_cmd.set_defaults(func=cmd_decision)
 
     check_cmd = sub.add_parser("check", help="Check links, daily duplicates, and secret-looking content.")
     check_cmd.add_argument("--json", action="store_true")

@@ -128,6 +128,7 @@ obs-agent route --cwd C:\work\app --request "Fix stale login sessions" --json
 obs-agent read --path CODEX.md --json
 obs-agent search --query "session" --path-prefix projects --json
 obs-agent record --category engineering/backend --title "auth session fix" --summary "Fixed stale session cleanup." --dry-run --json
+obs-agent decision --category engineering/backend --kind adr --title "sessions expire server-side" --field decision="..." --field why="..." --field enforce="..." --field scope="api/auth/**" --json
 obs-agent check --json
 obs-agent oab status --json
 obs-agent oab off --json
@@ -157,6 +158,7 @@ Tools:
 - `obs_read`
 - `obs_search`
 - `obs_record`
+- `obs_decision` — ADR (`decision`, `why`, `enforce`, `scope`, `examples`) or PRD (`why`, `problem`, `goal`, `journey`) under `{category}/decisions/`, linked from the category index
 - `obs_check`
 - `obs_oab`
 
@@ -167,7 +169,8 @@ Recommended agent flow:
 3. Do the user task.
 4. Preview with `obs_record` and `dry_run: true`.
 5. Record final work with `obs_record`.
-6. Optionally run `obs_check`.
+6. If the work fixed a rule that must keep holding, record it with `obs_decision` (`kind: adr`).
+7. Optionally run `obs_check`.
 
 Map `/oab status`, `/oab on`, `/oab off`, and `/oab set ...` requests to `obs_oab` or `obs-agent oab`.
 

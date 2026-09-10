@@ -37,6 +37,23 @@ Record work:
 python cli/obs_agent.py record --category <project/category> --title <title> --summary <summary> --json
 ```
 
+Record a decision (ADR) or requirement (PRD) — not history, a rule that must keep holding:
+
+```powershell
+python cli/obs_agent.py decision --category <project/category> --kind adr --title <rule> `
+  --field decision=<the rule> --field why=<rationale> --field enforce=<hook/CI/lint that rejects violations> `
+  --field scope=<files or folders it applies to> --field examples=<good/bad example> --json
+python cli/obs_agent.py decision --category <project/category> --kind prd --title <feature> `
+  --field why=<necessity> --field problem=<problem> --field goal=<goal> --field journey=<user flow> --json
+```
+
+Trigger an ADR whenever work ends in a rule other people or agents must follow:
+"never do X", "always use Y", a convention fixed after a bug, a tool or path choice
+with a non-obvious reason. Record the bug that produced the rule with `record`; record
+the rule itself with `decision`. Fill `enforce` honestly — "review only" is a valid
+answer, but say so. The note lands in `{category}/decisions/` and is linked from the
+category index so `route` will surface it later; what cannot be found cannot be enforced.
+
 Check vault health:
 
 ```powershell
@@ -59,6 +76,7 @@ When MCP is configured, prefer these tools:
 - `obs_read`
 - `obs_search`
 - `obs_record`
+- `obs_decision`
 - `obs_check`
 - `obs_oab`
 

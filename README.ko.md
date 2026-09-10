@@ -128,6 +128,7 @@ obs-agent route --cwd C:\work\app --request "Fix stale login sessions" --json
 obs-agent read --path CODEX.md --json
 obs-agent search --query "session" --path-prefix projects --json
 obs-agent record --category engineering/backend --title "auth session fix" --summary "Fixed stale session cleanup." --dry-run --json
+obs-agent decision --category engineering/backend --kind adr --title "세션은 서버에서 만료" --field decision="..." --field why="..." --field enforce="..." --field scope="api/auth/**" --json
 obs-agent check --json
 obs-agent oab status --json
 obs-agent oab off --json
@@ -157,6 +158,7 @@ obs-agent-mcp
 - `obs_read`
 - `obs_search`
 - `obs_record`
+- `obs_decision` — ADR(`decision`, `why`, `enforce`, `scope`, `examples`) 또는 PRD(`why`, `problem`, `goal`, `journey`)를 `{category}/decisions/`에 기록하고 카테고리 index에 링크
 - `obs_check`
 - `obs_oab`
 
@@ -167,7 +169,8 @@ obs-agent-mcp
 3. 사용자 작업 수행
 4. `obs_record`에 `dry_run: true`로 미리보기
 5. 최종 작업을 `obs_record`로 기록
-6. 필요하면 `obs_check` 실행
+6. 작업 결과가 "앞으로 지켜야 할 규칙"이면 `obs_decision`(`kind: adr`)으로 결정·이유·강제방법·범위·예시 기록. 이력은 `obs_record`, 규칙은 `obs_decision`
+7. 필요하면 `obs_check` 실행
 
 `/oab status`, `/oab on`, `/oab off`, `/oab set ...` 요청은 `obs_oab` 또는 `obs-agent oab`로 처리하면 됩니다.
 
