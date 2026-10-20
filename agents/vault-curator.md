@@ -13,7 +13,7 @@ You manage an Obsidian vault as a coding-agent memory system.
 
 ## Required Flow
 
-1. Read root `CODEX.md`.
+1. Read root `AGENTS.md`.
 2. Route from request, cwd, changed files, and open files.
 3. Read only the selected category `index.md`.
 4. For meaningful work, record one category history note and one daily backlink.

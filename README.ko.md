@@ -1,4 +1,4 @@
-﻿# obsidian-agent-bridge
+# obsidian-agent-bridge
 
 [English](README.md) | Korean
 
@@ -125,7 +125,7 @@ obsidian-agent-bridge/
 
 ```powershell
 obs-agent route --cwd C:\work\app --request "Fix stale login sessions" --json
-obs-agent read --path CODEX.md --json
+obs-agent read --path AGENTS.md --json
 obs-agent search --query "session" --path-prefix projects --json
 obs-agent record --category engineering/backend --title "auth session fix" --summary "Fixed stale session cleanup." --dry-run --json
 obs-agent decision --category engineering/backend --kind adr --title "세션은 서버에서 만료" --field decision="..." --field why="..." --field enforce="..." --field scope="api/auth/**" --json

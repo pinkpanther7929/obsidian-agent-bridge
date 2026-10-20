@@ -139,11 +139,11 @@ def route(
             best_matches = matches
 
     if best_score == 0:
-        read_set = ["CODEX.md"]
+        read_set = ["AGENTS.md"]
         reason = message(language, "no_route")
         confidence = 0.2
     else:
-        read_set = ["CODEX.md", f"{best_category}/index.md"]
+        read_set = ["AGENTS.md", f"{best_category}/handoff.md", f"{best_category}/index.md"]
         reason = message(language, "matched", matches=", ".join(sorted(set(best_matches))))
         confidence = min(0.95, 0.35 + best_score / 20)
 

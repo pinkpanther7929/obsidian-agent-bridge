@@ -8,6 +8,7 @@ from dataclasses import asdict
 if __package__ in {None, ""}:
     from checker import check
     from config import AppConfig
+    from handoff import read_handoff, write_handoff
     from oab import set_auto_record, set_option, status
     from reader import read_note, search_notes
     from recorder import record, record_decision
@@ -16,6 +17,7 @@ if __package__ in {None, ""}:
 else:
     from .checker import check
     from .config import AppConfig
+    from .handoff import read_handoff, write_handoff
     from .oab import set_auto_record, set_option, status
     from .reader import read_note, search_notes
     from .recorder import record, record_decision
@@ -92,6 +94,28 @@ def cmd_decision(args: argparse.Namespace) -> int:
         language=config.language,
         dry_run=args.dry_run,
     )
+    emit(asdict(result), args.json)
+    return 0
+
+
+def cmd_handoff(args: argparse.Namespace) -> int:
+    config = AppConfig.load(args.config)
+    vault = Vault.open(args.vault or config.vault)
+    if args.action == "read":
+        result = read_handoff(vault, category=args.category, language=config.language)
+        if not args.json:
+            print(result.text if result.exists else f"(no handoff: {result.path})")
+            return 0
+    else:
+        fields = {}
+        for item in args.field or []:
+            name, sep, value = item.partition("=")
+            if not sep:
+                raise ValueError(f"--field must look like name=value: {item}")
+            fields[name.strip()] = value
+        result = write_handoff(
+            vault, category=args.category, fields=fields, by=args.by, language=config.language, dry_run=args.dry_run
+        )
     emit(asdict(result), args.json)
     return 0
 
@@ -187,6 +211,15 @@ def build_parser() -> argparse.ArgumentParser:
     decision_cmd.add_argument("--dry-run", action="store_true")
     decision_cmd.add_argument("--json", action="store_true")
     decision_cmd.set_defaults(func=cmd_decision)
+
+    handoff_cmd = sub.add_parser("handoff", help="Read or overwrite {category}/handoff.md (capped current-state note).")
+    handoff_cmd.add_argument("action", choices=["read", "write"])
+    handoff_cmd.add_argument("--category", required=True)
+    handoff_cmd.add_argument("--field", action="append", help="name=value. goal, state, next (required), files, decisions, blockers.")
+    handoff_cmd.add_argument("--by", default="agent", help="Writer, e.g. claude, codex, gemini.")
+    handoff_cmd.add_argument("--dry-run", action="store_true")
+    handoff_cmd.add_argument("--json", action="store_true")
+    handoff_cmd.set_defaults(func=cmd_handoff)
 
     check_cmd = sub.add_parser("check", help="Check links, daily duplicates, and secret-looking content.")
     check_cmd.add_argument("--json", action="store_true")

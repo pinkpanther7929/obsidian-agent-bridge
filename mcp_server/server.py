@@ -7,6 +7,7 @@ from typing import Any, Callable
 
 from cli.checker import check
 from cli.config import AppConfig
+from cli.handoff import read_handoff, write_handoff
 from cli.oab import set_auto_record, set_option, status
 from cli.reader import read_note, search_notes
 from cli.recorder import record, record_decision
@@ -108,6 +109,25 @@ def tool_decision(args: dict[str, Any]) -> dict[str, Any]:
     return _text(asdict(result))
 
 
+def tool_handoff(args: dict[str, Any]) -> dict[str, Any]:
+    config, vault = _load_vault(args)
+    category = _required(args, "category")
+    if (args.get("action") or "read") == "read":
+        return _text(asdict(read_handoff(vault, category=category, language=config.language)))
+    fields = args.get("fields")
+    if not isinstance(fields, dict) or not all(isinstance(v, str) for v in fields.values()):
+        raise ValueError("Missing required argument: fields (object of string values)")
+    result = write_handoff(
+        vault,
+        category=category,
+        fields=fields,
+        by=args.get("by") or "agent",
+        language=config.language,
+        dry_run=bool(args.get("dryRun")),
+    )
+    return _text(asdict(result))
+
+
 def tool_check(args: dict[str, Any]) -> dict[str, Any]:
     _, vault = _load_vault(args)
     return _text(check(vault))
@@ -145,6 +165,7 @@ TOOLS: dict[str, Callable[[dict[str, Any]], dict[str, Any]]] = {
     "obs_search": tool_search,
     "obs_record": tool_record,
     "obs_decision": tool_decision,
+    "obs_handoff": tool_handoff,
     "obs_check": tool_check,
     "obs_oab": tool_oab,
 }
@@ -236,6 +257,27 @@ TOOL_DEFINITIONS = [
                 "vault": {"type": "string"},
             },
             "required": ["category", "kind", "title", "fields"],
+        },
+    },
+    {
+        "name": "obs_handoff",
+        "description": (
+            "Read or overwrite {category}/handoff.md, the capped (4000 chars) current-state note for switching "
+            "between agents/models. Read it first when resuming; write it before stopping or when tokens run low. "
+            "fields: goal, state, next (required), files, decisions, blockers. Current state only, no history."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "action": {"type": "string", "enum": ["read", "write"]},
+                "category": {"type": "string"},
+                "fields": {"type": "object", "additionalProperties": {"type": "string"}},
+                "by": {"type": "string", "description": "Writer, e.g. claude, codex, gemini."},
+                "dryRun": {"type": "boolean"},
+                "config": {"type": "string"},
+                "vault": {"type": "string"},
+            },
+            "required": ["category"],
         },
     },
     {

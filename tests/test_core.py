@@ -10,10 +10,11 @@ from pathlib import Path
 from cli.config import AppConfig
 from cli.auto_record import auto_record, latest_session_prompt
 from cli.checker import check
+from cli.handoff import read_handoff, write_handoff
 from cli.reader import read_note, search_notes
 from cli.recorder import record, record_decision
 from cli.router import build_category_hints, route
-from cli.vault import Vault
+from cli.vault import Vault, VaultError
 from mcp_server.server import handle
 
 
@@ -24,7 +25,7 @@ class CoreTests(unittest.TestCase):
         tmp = tempfile.TemporaryDirectory(dir=tmp_root)
         self.addCleanup(tmp.cleanup)
         root = Path(tmp.name)
-        (root / "CODEX.md").write_text("# CODEX\n", encoding="utf-8")
+        (root / "AGENTS.md").write_text("# AGENTS\n", encoding="utf-8")
         category = root / "projects" / "ai" / "agents"
         category.mkdir(parents=True)
         (category / "index.md").write_text("# Local LLM\n", encoding="utf-8")
@@ -34,7 +35,23 @@ class CoreTests(unittest.TestCase):
         vault = self.make_vault()
         result = route(vault, cwd=r"C:\work\app", request="Add an MCP agent memory tool")
         self.assertEqual(result.category, "projects/ai/agents")
-        self.assertIn("CODEX.md", result.read_set)
+        self.assertIn("AGENTS.md", result.read_set)
+
+    def test_handoff_overwrites_caps_and_routes_first(self) -> None:
+        vault = self.make_vault()
+        self.assertFalse(read_handoff(vault, category="ai/agents").exists)
+        with self.assertRaises(VaultError):
+            write_handoff(vault, category="ai/agents", fields={"goal": "g", "state": "s"})
+        with self.assertRaises(VaultError):
+            write_handoff(vault, category="ai/agents", fields={"goal": "g", "state": "x" * 5000, "next": "n"})
+        write_handoff(vault, category="ai/agents", fields={"goal": "old", "state": "s", "next": "n"}, by="codex")
+        write_handoff(vault, category="ai/agents", fields={"goal": "new", "state": "s", "next": "n"}, by="claude")
+        text = read_handoff(vault, category="ai/agents").text
+        self.assertIn("new", text)
+        self.assertNotIn("old", text)
+        self.assertIn("by: claude", text)
+        result = route(vault, request="Add an MCP agent memory tool")
+        self.assertEqual(result.read_set[1], "projects/ai/agents/handoff.md")
 
     def test_record_writes_history_and_daily_once(self) -> None:
         vault = self.make_vault()
@@ -227,7 +244,7 @@ class CoreTests(unittest.TestCase):
         right.mkdir(parents=True)
         (left / "shared.md").write_text("# Shared\n", encoding="utf-8")
         (right / "shared.md").write_text("# Shared\n", encoding="utf-8")
-        (vault.root / "CODEX.md").write_text("[[shared]]\n", encoding="utf-8")
+        (vault.root / "AGENTS.md").write_text("[[shared]]\n", encoding="utf-8")
         result = check(vault)
         self.assertEqual(result["errors"][0]["kind"], "ambiguous_link")
 
