@@ -105,6 +105,7 @@ def tool_decision(args: dict[str, Any]) -> dict[str, Any]:
         daily_folder=config.daily_folder,
         language=config.language,
         dry_run=bool(args.get("dryRun")),
+        supersedes=args.get("supersedes") or None,
     )
     return _text(asdict(result))
 
@@ -130,7 +131,7 @@ def tool_handoff(args: dict[str, Any]) -> dict[str, Any]:
 
 def tool_check(args: dict[str, Any]) -> dict[str, Any]:
     _, vault = _load_vault(args)
-    return _text(check(vault))
+    return _text(check(vault, verify_code=bool(args.get("verifyCode")), fix_anchors=bool(args.get("fixAnchors")), apply=bool(args.get("apply"))))
 
 
 def tool_oab(args: dict[str, Any]) -> dict[str, Any]:
@@ -174,7 +175,7 @@ TOOLS: dict[str, Callable[[dict[str, Any]], dict[str, Any]]] = {
 TOOL_DEFINITIONS = [
     {
         "name": "obs_route",
-        "description": "Route a task to an Obsidian project/category and return minimal notes to read.",
+        "description": "Route a task to an Obsidian project/category and return minimal notes to read, plus code anchors (path:line) from the category index '## Code Anchors' table when present.",
         "inputSchema": {
             "type": "object",
             "properties": {
@@ -241,7 +242,8 @@ TOOL_DEFINITIONS = [
             "Record a decision document under {category}/decisions/ and link it from the category index and daily note. "
             "kind=adr: fields decision, why, enforce (required), scope, examples, related. "
             "kind=prd: fields why, problem, goal (required), journey, related. "
-            "Use for architectural rules, conventions, and feature requirements — not for work history (use obs_record)."
+            "Use for architectural rules, conventions, and feature requirements — not for work history (use obs_record). "
+            "Pass supersedes=<old decision path> to replace an earlier decision."
         ),
         "inputSchema": {
             "type": "object",
@@ -251,6 +253,7 @@ TOOL_DEFINITIONS = [
                 "title": {"type": "string"},
                 "fields": {"type": "object", "additionalProperties": {"type": "string"}},
                 "status": {"type": "string", "enum": ["proposed", "accepted", "deprecated", "superseded"]},
+                "supersedes": {"type": "string", "description": "Path of the older decision note this replaces; it is marked superseded."},
                 "date": {"type": "string"},
                 "dryRun": {"type": "boolean"},
                 "config": {"type": "string"},
@@ -282,10 +285,13 @@ TOOL_DEFINITIONS = [
     },
     {
         "name": "obs_check",
-        "description": "Check the vault for missing/ambiguous links, duplicate daily backlinks, and secret-looking content.",
+        "description": "Check the vault for missing/ambiguous links, duplicate daily backlinks, secret-looking content, and notes citing superseded decisions. verifyCode checks '## Code Anchors' tables against local code; fixAnchors previews line fixes (apply=true writes them).",
         "inputSchema": {
             "type": "object",
             "properties": {
+                "verifyCode": {"type": "boolean"},
+                "fixAnchors": {"type": "boolean"},
+                "apply": {"type": "boolean"},
                 "config": {"type": "string"},
                 "vault": {"type": "string"},
             },

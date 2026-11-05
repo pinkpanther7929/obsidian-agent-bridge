@@ -84,6 +84,7 @@ def cmd_decision(args: argparse.Namespace) -> int:
         fields[name.strip()] = value
     result = record_decision(
         vault,
+        supersedes=args.supersedes,
         category=args.category,
         kind=args.kind,
         title=args.title,
@@ -123,7 +124,7 @@ def cmd_handoff(args: argparse.Namespace) -> int:
 def cmd_check(args: argparse.Namespace) -> int:
     config = AppConfig.load(args.config)
     vault = Vault.open(args.vault or config.vault)
-    result = check(vault)
+    result = check(vault, verify_code=args.verify_code, fix_anchors=args.fix_anchors, apply=args.apply)
     emit(result, args.json)
     return 1 if result["error_count"] else 0
 
@@ -207,6 +208,7 @@ def build_parser() -> argparse.ArgumentParser:
         help="name=value. adr: decision, why, enforce, scope, examples, related. prd: why, problem, goal, journey, related.",
     )
     decision_cmd.add_argument("--status", default="accepted", choices=["proposed", "accepted", "deprecated", "superseded"])
+    decision_cmd.add_argument("--supersedes", help="Path of the older decision note this one replaces; it is marked superseded.")
     decision_cmd.add_argument("--date")
     decision_cmd.add_argument("--dry-run", action="store_true")
     decision_cmd.add_argument("--json", action="store_true")
@@ -222,6 +224,9 @@ def build_parser() -> argparse.ArgumentParser:
     handoff_cmd.set_defaults(func=cmd_handoff)
 
     check_cmd = sub.add_parser("check", help="Check links, daily duplicates, and secret-looking content.")
+    check_cmd.add_argument("--verify-code", action="store_true", help="Verify '## Code Anchors' tables against local code.")
+    check_cmd.add_argument("--fix-anchors", action="store_true", help="Show line fixes for drifted anchors (dry-run unless --apply).")
+    check_cmd.add_argument("--apply", action="store_true", help="With --fix-anchors, write the fixes.")
     check_cmd.add_argument("--json", action="store_true")
     check_cmd.set_defaults(func=cmd_check)
 

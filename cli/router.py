@@ -2,15 +2,17 @@ from __future__ import annotations
 
 import re
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Iterable
 
 try:
+    from .anchors import compact, parse_anchors
     from .config import DEFAULT_CATEGORY_HINTS
     from .i18n import message
     from .vault import Vault
 except ImportError:
+    from anchors import compact, parse_anchors
     from config import DEFAULT_CATEGORY_HINTS
     from i18n import message
     from vault import Vault
@@ -26,6 +28,17 @@ class RouteResult:
     confidence: float
     reason: str
     read_set: list[str]
+    anchors: list[dict[str, str]] = field(default_factory=list)
+
+
+def _category_anchors(vault: Vault, category: str) -> list[dict[str, str]]:
+    index = vault.path(f"{category}/index.md")
+    if not index.exists():
+        return []
+    try:
+        return compact(parse_anchors(index.read_text(encoding="utf-8", errors="replace"))[1])
+    except OSError:
+        return []
 
 
 def _text_blob(cwd: str | None, paths: list[str], request: str | None) -> str:
@@ -148,7 +161,8 @@ def route(
         confidence = min(0.95, 0.35 + best_score / 20)
 
     read_set = [path for path in read_set if vault.path(path).exists()]
-    return RouteResult(best_category, confidence, reason, read_set)
+    anchors = _category_anchors(vault, best_category) if best_score else []
+    return RouteResult(best_category, confidence, reason, read_set, anchors)
 
 
 def slugify(value: str) -> str:

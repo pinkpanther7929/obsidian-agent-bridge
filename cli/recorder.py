@@ -120,6 +120,28 @@ class DecisionResult:
     daily_added: bool
     dry_run: bool
     note_text: str
+    superseded: str | None = None
+
+
+def _set_frontmatter(text: str, updates: dict[str, str]) -> str:
+    """Set/replace simple `key: value` lines inside the leading --- frontmatter block."""
+    nl = chr(10)
+    fence = "---" + nl
+    if not text.startswith(fence):
+        return text
+    end = text.find(nl + "---", len(fence) - 1)
+    if end < 0:
+        return text
+    head, tail = text[len(fence):end].split(nl), text[end:]
+    for key, value in updates.items():
+        line = f"{key}: {value}"
+        for i, existing in enumerate(head):
+            if existing.startswith(f"{key}:"):
+                head[i] = line
+                break
+        else:
+            head.append(line)
+    return fence + nl.join(head) + tail
 
 
 def record_decision(
@@ -134,6 +156,7 @@ def record_decision(
     daily_folder: str = "daily",
     language: str = "en",
     dry_run: bool = False,
+    supersedes: str | None = None,
 ) -> DecisionResult:
     kind = kind.strip().casefold()
     if kind not in DECISION_FIELDS:
@@ -157,6 +180,14 @@ def record_decision(
     note_rel = f"{category_path}/decisions/{day}-{kind}-{slug}.md"
     daily_rel = f"{daily_folder.strip().strip('/')}/{day}.md"
     label = f"{kind.upper()}: {title}"
+    old_rel = (supersedes or "").strip().replace("\\", "/")
+    if old_rel:
+        if not old_rel.endswith(".md"):
+            old_rel += ".md"
+        if not vault.path(old_rel).exists():
+            raise VaultError(f"Superseded decision not found: {old_rel}")
+        if old_rel == note_rel:
+            raise VaultError("A decision cannot supersede itself")
     index_line = f"- [[{note_rel[:-3]}|{label}]]"
     daily_line = f"- [[{note_rel[:-3]}|{category_path.replace('projects/', '')}: {label}]]"
 
@@ -168,6 +199,10 @@ def record_decision(
         f"date: {day}",
         f"category: {category_path}",
         f"tags: [{kind}, decision]",
+    ]
+    if old_rel:
+        lines.append(f"supersedes: [[{old_rel[:-3]}]]")
+    lines += [
         "---",
         f"# {label}",
         "",
@@ -181,9 +216,12 @@ def record_decision(
     assert_no_secrets(text)
 
     if dry_run:
-        return DecisionResult(note_rel, index_rel, False, daily_rel, False, True, text)
+        return DecisionResult(note_rel, index_rel, False, daily_rel, False, True, text, old_rel or None)
 
     vault.write_text(note_rel, text)
+    if old_rel:
+        old_text = vault.path(old_rel).read_text(encoding="utf-8", errors="replace")
+        vault.write_text(old_rel, _set_frontmatter(old_text, {"status": "superseded", "superseded_by": f"[[{note_rel[:-3]}]]"}))
     index_added = vault.append_unique_line(index_rel, index_line)
     daily_added = vault.append_unique_line(daily_rel, daily_line)
-    return DecisionResult(note_rel, index_rel, index_added, daily_rel, daily_added, False, text)
+    return DecisionResult(note_rel, index_rel, index_added, daily_rel, daily_added, False, text, old_rel or None)
