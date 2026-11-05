@@ -6,9 +6,11 @@ from typing import Any
 
 try:
     from .anchors import apply_fixes, verify_anchors
+    from .gaps import report as gaps_report
     from .vault import SECRET_RE, Vault
 except ImportError:
     from anchors import apply_fixes, verify_anchors
+    from gaps import report as gaps_report
     from vault import SECRET_RE, Vault
 
 WIKI_LINK_RE = re.compile(r"\[\[([^\]|#]+)(?:#[^\]|]+)?(?:\|[^\]]+)?\]\]")
@@ -107,7 +109,7 @@ def _retired_citations(texts: dict[str, str]) -> list[dict[str, Any]]:
     return found
 
 
-def check(vault: Vault, *, verify_code: bool = False, fix_anchors: bool = False, apply: bool = False) -> dict[str, Any]:
+def check(vault: Vault, *, verify_code: bool = False, fix_anchors: bool = False, apply: bool = False, routing_gaps: bool = False) -> dict[str, Any]:
     aliases = _aliases(vault)
     errors: list[dict[str, Any]] = []
     warnings: list[dict[str, Any]] = []
@@ -133,6 +135,8 @@ def check(vault: Vault, *, verify_code: bool = False, fix_anchors: bool = False,
 
     warnings.extend(_retired_citations(texts))
     extra: dict[str, Any] = {}
+    if routing_gaps:
+        extra["routing_gaps"] = gaps_report(vault)
     if verify_code or fix_anchors:
         fixes: list[dict[str, Any]] = []
         fixed_rows = 0
@@ -147,5 +151,6 @@ def check(vault: Vault, *, verify_code: bool = False, fix_anchors: bool = False,
                     vault.write_text(rel, new_text)
                     fixed_rows += changed
         if fix_anchors:
-            extra = {"fix_preview" if not apply else "fixed_anchors": fixes if not apply else fixed_rows, "applied": apply}
+            extra["fix_preview" if not apply else "fixed_anchors"] = fixes if not apply else fixed_rows
+            extra["applied"] = apply
     return {"errors": errors, "warnings": warnings, "error_count": len(errors), "warning_count": len(warnings), **extra}

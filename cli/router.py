@@ -8,11 +8,13 @@ from typing import Iterable
 
 try:
     from .anchors import compact, parse_anchors
+    from .gaps import log_gap
     from .config import DEFAULT_CATEGORY_HINTS
     from .i18n import message
     from .vault import Vault
 except ImportError:
     from anchors import compact, parse_anchors
+    from gaps import log_gap
     from config import DEFAULT_CATEGORY_HINTS
     from i18n import message
     from vault import Vault
@@ -152,6 +154,7 @@ def route(
             best_matches = matches
 
     if best_score == 0:
+        log_gap(vault, "route", request or " ".join(paths), cwd)
         read_set = ["AGENTS.md"]
         reason = message(language, "no_route")
         confidence = 0.2

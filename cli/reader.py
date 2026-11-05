@@ -4,8 +4,10 @@ import re
 from dataclasses import dataclass
 
 try:
+    from .gaps import log_gap
     from .vault import Vault
 except ImportError:
+    from gaps import log_gap
     from vault import Vault
 
 
@@ -52,4 +54,6 @@ def search_notes(
                 hits.append(SearchHit(vault.rel(note), line_no, line.strip()))
                 if len(hits) >= limit:
                     return hits
+    if not hits:
+        log_gap(vault, "search", query)
     return hits

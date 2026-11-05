@@ -131,7 +131,7 @@ def tool_handoff(args: dict[str, Any]) -> dict[str, Any]:
 
 def tool_check(args: dict[str, Any]) -> dict[str, Any]:
     _, vault = _load_vault(args)
-    return _text(check(vault, verify_code=bool(args.get("verifyCode")), fix_anchors=bool(args.get("fixAnchors")), apply=bool(args.get("apply"))))
+    return _text(check(vault, verify_code=bool(args.get("verifyCode")), fix_anchors=bool(args.get("fixAnchors")), apply=bool(args.get("apply")), routing_gaps=bool(args.get("routingGaps"))))
 
 
 def tool_oab(args: dict[str, Any]) -> dict[str, Any]:
@@ -285,11 +285,12 @@ TOOL_DEFINITIONS = [
     },
     {
         "name": "obs_check",
-        "description": "Check the vault for missing/ambiguous links, duplicate daily backlinks, secret-looking content, and notes citing superseded decisions. verifyCode checks '## Code Anchors' tables against local code; fixAnchors previews line fixes (apply=true writes them).",
+        "description": "Check the vault for missing/ambiguous links, duplicate daily backlinks, secret-looking content, and notes citing superseded decisions. verifyCode checks '## Code Anchors' tables against local code; fixAnchors previews line fixes (apply=true writes them). routingGaps summarises obs_route/obs_search queries that found nothing.",
         "inputSchema": {
             "type": "object",
             "properties": {
                 "verifyCode": {"type": "boolean"},
+                "routingGaps": {"type": "boolean"},
                 "fixAnchors": {"type": "boolean"},
                 "apply": {"type": "boolean"},
                 "config": {"type": "string"},

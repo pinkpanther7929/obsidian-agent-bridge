@@ -124,7 +124,7 @@ def cmd_handoff(args: argparse.Namespace) -> int:
 def cmd_check(args: argparse.Namespace) -> int:
     config = AppConfig.load(args.config)
     vault = Vault.open(args.vault or config.vault)
-    result = check(vault, verify_code=args.verify_code, fix_anchors=args.fix_anchors, apply=args.apply)
+    result = check(vault, verify_code=args.verify_code, fix_anchors=args.fix_anchors, apply=args.apply, routing_gaps=args.routing_gaps)
     emit(result, args.json)
     return 1 if result["error_count"] else 0
 
@@ -226,6 +226,7 @@ def build_parser() -> argparse.ArgumentParser:
     check_cmd = sub.add_parser("check", help="Check links, daily duplicates, and secret-looking content.")
     check_cmd.add_argument("--verify-code", action="store_true", help="Verify '## Code Anchors' tables against local code.")
     check_cmd.add_argument("--fix-anchors", action="store_true", help="Show line fixes for drifted anchors (dry-run unless --apply).")
+    check_cmd.add_argument("--routing-gaps", action="store_true", help="Summarise route/search queries that found nothing.")
     check_cmd.add_argument("--apply", action="store_true", help="With --fix-anchors, write the fixes.")
     check_cmd.add_argument("--json", action="store_true")
     check_cmd.set_defaults(func=cmd_check)
